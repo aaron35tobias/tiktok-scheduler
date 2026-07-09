@@ -1,9 +1,9 @@
 import logging
 from django.utils import timezone
-from tiktok_scheduler.models import ScheduledPost
-from api.media import upload_media
-from api.publishing import publish_post
-from api.auth import refresh_access_token
+from scheduler.models import ScheduledPost
+from tiktok.services.upload import upload_media
+from tiktok.services.publisher import publish_post
+from tiktok.services.authentication import refresh_access_token
 
 logger = logging.getLogger(__name__)
 
