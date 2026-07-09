@@ -1,0 +1,8 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+tiktok_scheduler.db
+logs/
+app.py
+cli.py
