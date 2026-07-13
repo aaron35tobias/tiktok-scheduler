@@ -1,0 +1,26 @@
+graph TD
+    classDef external fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef storage fill:#ff9,stroke:#333,stroke-width:2px;
+    classDef app fill:#bbf,stroke:#333,stroke-width:2px;
+
+    User([User / Browser])
+    Ngrok[Ngrok Tunnel]:::external
+    Django[Django Web Server]:::app
+    Celery[Celery Worker]:::app
+    Redis[(Redis Message Broker)]:::storage
+    DB[(SQLite / JSON Storage)]:::storage
+    TikTok[TikTok Direct Post API]:::external
+
+    User -- "Authenticates & Uploads Video" --> Ngrok
+    Ngrok -- "Forwards Traffic" --> Django
+    
+    Django -- "Saves Video & Post Metadata" --> DB
+    Django -- "Creates Scheduled Task (ETA)" --> Redis
+    
+    Redis -- "Holds Task in Queue" --> Celery
+    
+    Celery -- "Wakes up at Scheduled Time" --> DB
+    Celery -- "Uploads Video in Chunks" --> TikTok
+    
+    TikTok -- "Returns Publish ID" --> Celery
+    Celery -- "Updates Post Status (Success/Fail)" --> DB

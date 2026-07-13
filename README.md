@@ -1,10 +1,37 @@
-# TikTok Scheduler (Django PoC)
+# TikTok Scheduler (Django + Celery)
 
-A standalone Proof of Concept for scheduling and automatically publishing video content to TikTok using the official TikTok Content Posting API. Built with Django, this PoC is designed to be easily integrated into larger Django-based applications.
+A complete full-stack web application for securely authenticating users and scheduling video content to be published automatically using the official TikTok Direct Post API.
 
 ## Architecture
 
-![Architecture](diagrams/architecture.png)
+```mermaid
+graph TD
+    classDef external fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef storage fill:#ff9,stroke:#333,stroke-width:2px;
+    classDef app fill:#bbf,stroke:#333,stroke-width:2px;
+
+    User([User / Browser])
+    Ngrok[Ngrok Tunnel]:::external
+    Django[Django Web Server]:::app
+    Celery[Celery Worker]:::app
+    Redis[(Redis Message Broker)]:::storage
+    DB[(SQLite / JSON Storage)]:::storage
+    TikTok[TikTok Direct Post API]:::external
+
+    User -- "Authenticates & Uploads Video" --> Ngrok
+    Ngrok -- "Forwards Traffic" --> Django
+    
+    Django -- "Saves Video & Post Metadata" --> DB
+    Django -- "Creates Scheduled Task (ETA)" --> Redis
+    
+    Redis -- "Holds Task in Queue" --> Celery
+    
+    Celery -- "Wakes up at Scheduled Time" --> DB
+    Celery -- "Uploads Video in Chunks" --> TikTok
+    
+    TikTok -- "Returns Publish ID" --> Celery
+    Celery -- "Updates Post Status (Success/Fail)" --> DB
+```
 
 ## Setup Instructions
 
@@ -22,37 +49,41 @@ A standalone Proof of Concept for scheduling and automatically publishing video 
    # Update these with your real TikTok API credentials:
    TIKTOK_CLIENT_ID=your_client_key_here
    TIKTOK_CLIENT_SECRET=your_client_secret_here
-
-   # Keep this as is for local testing:
-   REDIRECT_URI=http://localhost:8000/callback
    
+   # For local testing with your local timezone
+   TIMEZONE=Asia/Dubai
    DATABASE_URL=sqlite:///tiktok_scheduler.db
-   TIMEZONE=UTC
    ```
 
 3. **Initialize Database:**
    ```bash
-   python manage.py makemigrations tiktok_scheduler
+   python manage.py makemigrations
    python manage.py migrate
    ```
 
-## Usage
+## Usage (Local Development)
 
-1. **Authenticate your Account:**
-   Start the Django server:
-   ```bash
-   python manage.py runserver
-   ```
-   Visit `http://localhost:8000` in your browser and click the link to authorize the application. This securely stores your OAuth tokens in the database.
+To make local development effortless, we have included an automator script (`start_all.py`).
 
-2. **Schedule a Post:**
-   In a new terminal window, schedule a post (e.g., for 2 minutes from now):
+1. **Start the Ngrok Tunnel:**
+   In a terminal, expose port 8000 so TikTok can send OAuth callbacks:
    ```bash
-   python manage.py schedule_post --file "path/to/video.mp4" --caption "My scheduled video! #test" --delay 2
+   ngrok http 8000
    ```
 
-3. **Run the Background Scheduler:**
+2. **Start the Application Stack:**
+   In a second terminal, run the automator:
    ```bash
-   python manage.py run_scheduler
+   python start_all.py
    ```
-   Keep this running in the background. It will automatically detect pending posts, refresh your access token if necessary, upload the media, and publish it to TikTok when the scheduled time arrives.
+   This script will:
+   - Auto-detect your active Ngrok URL and update your `.env` file.
+   - Automatically download and start a local Redis server (for Windows).
+   - Boot up the Django Web Server.
+   - Boot up the Celery background worker.
+
+3. **Schedule a Post:**
+   - Visit the Ngrok URL printed in your terminal.
+   - Click **Connect with TikTok** to securely authorize your account.
+   - Drag and drop an `.mp4` file, add a caption, and select a future date/time.
+   - The Celery worker will wait in the background and automatically publish the video exactly when scheduled!
