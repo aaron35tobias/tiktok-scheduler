@@ -6,3 +6,17 @@ tiktok_scheduler.db
 logs/
 app.py
 cli.py
+
+# Data and Media
+media/
+tiktok_scheduler/data/
+
+# Redis
+redis-server.exe
+redis.windows.conf
+dump.rdb
+
+# Test Files
+*.mp4
+*.png
+*.jpg
