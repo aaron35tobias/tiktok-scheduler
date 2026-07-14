@@ -28,9 +28,11 @@ def dashboard(request):
 
 def login(request):
     """Generates TikTok Auth URL and redirects the user."""
-    # Generate PKCE verifier and challenge
+    # Generate PKCE verifier and challenge.
+    # NOTE: TikTok is non-standard — it requires the HEX encoding of SHA256
+    # (not the usual base64url). code_challenge_method stays "S256".
     code_verifier = base64.urlsafe_b64encode(os.urandom(32)).decode('utf-8').rstrip('=')
-    code_challenge = base64.urlsafe_b64encode(hashlib.sha256(code_verifier.encode('utf-8')).digest()).decode('utf-8').rstrip('=')
+    code_challenge = hashlib.sha256(code_verifier.encode('utf-8')).hexdigest()
     
     # We store code_verifier in session for the callback
     request.session['code_verifier'] = code_verifier
