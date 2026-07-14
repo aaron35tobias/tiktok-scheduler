@@ -61,6 +61,20 @@
     .feature-card:hover .icon {
         transform: scale(1.22);
     }
+
+    /* Glow on the whole landing panel when hovered */
+    .glass-panel {
+        transition: box-shadow var(--transition-speed),
+                    border-color var(--transition-speed),
+                    transform var(--transition-speed);
+    }
+
+    .glass-panel:hover {
+        border-color: rgba(37, 244, 238, 0.35);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37),
+                    0 0 40px rgba(37, 244, 238, 0.25),
+                    0 0 80px rgba(254, 44, 85, 0.18);
+    }
 </style>
 {% endblock %}
 
