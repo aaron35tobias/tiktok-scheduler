@@ -4,6 +4,7 @@
 <style>
     /* Keep the app's background; break out of the centered container for a full dashboard */
     .container { max-width: 100%; padding: 0; align-items: stretch; }
+    html { scroll-behavior: smooth; }
     .help-about { display: none; }  /* hide landing-page help button here */
 
     :root {
@@ -495,12 +496,27 @@
     const links = document.querySelectorAll('.nav-link[href^="#"]');
     const map = {};
     links.forEach(l => { const id = l.getAttribute('href').slice(1); if (id) map[id] = l; });
+    const sectionIds = Object.keys(map);
+
+    function setActive(id) {
+        links.forEach(l => l.classList.remove('active'));
+        if (map[id]) map[id].classList.add('active');
+    }
+
+    // Highlight immediately when a nav item is clicked
+    links.forEach(l => l.addEventListener('click', () => {
+        const id = l.getAttribute('href').slice(1);
+        if (id) setActive(id);
+    }));
+
+    // Highlight based on scroll position — only real nav sections
     window.addEventListener('scroll', () => {
-        let current = '';
-        document.querySelectorAll('.main [id]').forEach(sec => {
-            if (window.scrollY >= sec.offsetTop - 130) current = sec.id;
-        });
-        if (map[current]) { links.forEach(l => l.classList.remove('active')); map[current].classList.add('active'); }
+        let current = sectionIds[0] || '';
+        for (const id of sectionIds) {
+            const sec = document.getElementById(id);
+            if (sec && window.scrollY >= sec.offsetTop - 130) current = id;
+        }
+        setActive(current);
     });
 </script>
 {% endblock %}
