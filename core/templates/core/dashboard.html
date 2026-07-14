@@ -509,13 +509,19 @@
         if (id) setActive(id);
     }));
 
-    // Highlight based on scroll position — only real nav sections
+    // Highlight based on scroll position — pick the furthest section scrolled
+    // past by POSITION (not sidebar order), so it stays accurate.
     window.addEventListener('scroll', () => {
-        let current = sectionIds[0] || '';
+        let current = '';
+        let maxTop = -Infinity;
         for (const id of sectionIds) {
             const sec = document.getElementById(id);
-            if (sec && window.scrollY >= sec.offsetTop - 130) current = id;
+            if (sec && window.scrollY >= sec.offsetTop - 130 && sec.offsetTop > maxTop) {
+                maxTop = sec.offsetTop;
+                current = id;
+            }
         }
+        if (!current) current = sectionIds[0] || '';
         setActive(current);
     });
 </script>
