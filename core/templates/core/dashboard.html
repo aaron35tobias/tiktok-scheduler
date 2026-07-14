@@ -498,20 +498,42 @@
     links.forEach(l => { const id = l.getAttribute('href').slice(1); if (id) map[id] = l; });
     const sectionIds = Object.keys(map);
 
+    let clickLock = false;
+    let clickTimer = null;
+
     function setActive(id) {
         links.forEach(l => l.classList.remove('active'));
         if (map[id]) map[id].classList.add('active');
     }
 
-    // Highlight immediately when a nav item is clicked
+    function lastSectionId() {
+        let id = '', top = -Infinity;
+        for (const s of sectionIds) {
+            const el = document.getElementById(s);
+            if (el && el.offsetTop > top) { top = el.offsetTop; id = s; }
+        }
+        return id;
+    }
+
+    // Highlight immediately on click, and let that choice stick while the page
+    // smooth-scrolls (so bottom items like Settings don't get overridden).
     links.forEach(l => l.addEventListener('click', () => {
         const id = l.getAttribute('href').slice(1);
-        if (id) setActive(id);
+        if (!id) return;
+        setActive(id);
+        clickLock = true;
+        clearTimeout(clickTimer);
+        clickTimer = setTimeout(() => { clickLock = false; }, 700);
     }));
 
-    // Highlight based on scroll position — pick the furthest section scrolled
-    // past by POSITION (not sidebar order), so it stays accurate.
+    // Highlight based on scroll position — furthest section by POSITION.
     window.addEventListener('scroll', () => {
+        if (clickLock) return;
+        // At the very bottom, always light the last section.
+        if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 6) {
+            setActive(lastSectionId());
+            return;
+        }
         let current = '';
         let maxTop = -Infinity;
         for (const id of sectionIds) {
