@@ -13,6 +13,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 TOKENS_FILE = os.path.join(DATA_DIR, "tokens.json")
 SCHEDULE_FILE = os.path.join(DATA_DIR, "schedule.json")
+PROFILE_FILE = os.path.join(DATA_DIR, "profile.json")
+ACTIVITY_FILE = os.path.join(DATA_DIR, "activity.json")
+SETTINGS_FILE = os.path.join(DATA_DIR, "settings.json")
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
 
 # Ensure directories exist

@@ -112,4 +112,20 @@ class TikTokAPIClient:
     def post(self, endpoint: str, **kwargs):
         return self._request("POST", endpoint, **kwargs)
 
+    def get_user_info(self) -> Dict[str, Any]:
+        """Fetches the connected user's profile. Requires user.info.basic
+        (+ user.info.profile / user.info.stats for the fuller fields).
+        Falls back to just basic fields if the fuller request is rejected."""
+        full_fields = (
+            "open_id,union_id,avatar_url,display_name,username,"
+            "follower_count,following_count,likes_count,video_count,is_verified"
+        )
+        basic_fields = "open_id,union_id,avatar_url,display_name"
+        try:
+            resp = self.get(f"user/info/?fields={full_fields}")
+        except Exception as e:
+            logger.warning(f"Full user.info fetch failed ({e}); retrying with basic fields.")
+            resp = self.get(f"user/info/?fields={basic_fields}")
+        return resp.get("data", {}).get("user", {})
+
 api_client = TikTokAPIClient()

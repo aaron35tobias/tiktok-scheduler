@@ -3,42 +3,159 @@ import time
 import base64
 import hashlib
 import urllib.parse
-import requests
+import calendar as pycal
+import logging
+import uuid
 from datetime import datetime
+
+import requests
 from django.utils import timezone
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import FileSystemStorage
-import uuid
 
 from tiktok_scheduler import config
-from tiktok_scheduler.models import Token, Post
+from tiktok_scheduler.models import Token, Post, Profile
 from tiktok_scheduler.storage import Storage
+from tiktok_scheduler.api import api_client
 from .tasks import upload_post_task
 
+logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+def _fetch_and_save_profile():
+    """Fetch the connected account's profile from TikTok and cache it."""
+    try:
+        user = api_client.get_user_info()
+        profile = Profile(
+            open_id=user.get("open_id", ""),
+            avatar_url=user.get("avatar_url", ""),
+            display_name=user.get("display_name", ""),
+            username=user.get("username", ""),
+            follower_count=user.get("follower_count"),
+            following_count=user.get("following_count"),
+            likes_count=user.get("likes_count"),
+            video_count=user.get("video_count"),
+            is_verified=user.get("is_verified", False),
+        )
+        Storage.save_profile(profile)
+        return profile
+    except Exception as e:
+        logger.warning(f"Could not fetch TikTok profile: {e}")
+        return None
+
+
+def _build_stats(posts):
+    today = datetime.now().date()
+    published_today = 0
+    pending = 0
+    failed = 0
+    for p in posts:
+        if p.status == "Failed":
+            failed += 1
+        elif p.status in ("Pending", "Uploading"):
+            pending += 1
+        if p.status == "Published":
+            dt = p.schedule_dt
+            if dt and dt.date() == today:
+                published_today += 1
+    return {
+        "scheduled": len(posts),
+        "published_today": published_today,
+        "pending": pending,
+        "failed": failed,
+    }
+
+
+def _build_calendar(posts):
+    today = datetime.now()
+    year, month = today.year, today.month
+    day_posts = {}
+    for p in posts:
+        dt = p.schedule_dt
+        if dt and dt.year == year and dt.month == month:
+            day_posts.setdefault(dt.day, []).append(p)
+
+    cal = pycal.Calendar(firstweekday=0)  # Monday first
+    weeks = []
+    for week in cal.monthdatescalendar(year, month):
+        row = []
+        for d in week:
+            in_month = d.month == month
+            row.append({
+                "day": d.day,
+                "in_month": in_month,
+                "is_today": d == today.date(),
+                "posts": day_posts.get(d.day, []) if in_month else [],
+            })
+        weeks.append(row)
+    return {
+        "month_name": today.strftime("%B %Y"),
+        "weekday_names": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+        "weeks": weeks,
+    }
+
+
+def _build_notifications(posts, token):
+    notes = []
+    if not token:
+        notes.append({"type": "error", "message": "TikTok account disconnected."})
+    else:
+        if token.expires_at:
+            days = int((token.expires_at - time.time()) / 86400)
+            if days <= 5:
+                notes.append({"type": "warning", "message": f"OAuth token expires in {max(days, 0)} day(s)."})
+    for p in posts:
+        if p.status == "Failed":
+            notes.append({"type": "error", "message": f"Upload failed: {p.caption or p.media_filename}"})
+        elif p.status == "Published":
+            notes.append({"type": "success", "message": f"Video published successfully: {p.caption or p.media_filename}"})
+    return notes[:6]
+
+
+# ---------------------------------------------------------------------------
+# Pages
+# ---------------------------------------------------------------------------
 def index(request):
     """Simple Landing Page to Login."""
     return render(request, 'core/index.html')
 
+
 def dashboard(request):
-    """The new Scheduler Dashboard."""
+    """The full Scheduler Dashboard."""
     posts = Storage.load_schedule()
-    return render(request, 'core/dashboard.html', {'posts': posts})
+    token = Storage.load_tokens()
+    profile = Storage.load_profile()
+
+    context = {
+        'posts': posts,
+        'profile': profile,
+        'connected': bool(token and token.access_token),
+        'stats': _build_stats(posts),
+        'calendar': _build_calendar(posts),
+        'activity': Storage.load_activity(),
+        'notifications': _build_notifications(posts, token),
+        'settings': Storage.load_settings(),
+    }
+    return render(request, 'core/dashboard.html', context)
+
 
 def login(request):
     """Generates TikTok Auth URL and redirects the user."""
-    # Generate PKCE verifier and challenge.
-    # NOTE: TikTok is non-standard — it requires the HEX encoding of SHA256
-    # (not the usual base64url). code_challenge_method stays "S256".
     code_verifier = base64.urlsafe_b64encode(os.urandom(32)).decode('utf-8').rstrip('=')
+    # NOTE: TikTok requires the HEX encoding of SHA256 (not base64url). Method stays S256.
     code_challenge = hashlib.sha256(code_verifier.encode('utf-8')).hexdigest()
-    
-    # We store code_verifier in session for the callback
+
     request.session['code_verifier'] = code_verifier
-    
+
     base_url = "https://www.tiktok.com/v2/auth/authorize/"
-    scopes = ["user.info.basic", "video.upload", "video.publish"]
+    # Extra scopes let us fetch follower/following/video counts and username.
+    scopes = ["user.info.basic", "user.info.profile", "user.info.stats",
+              "video.upload", "video.publish"]
     params = {
         "client_key": config.TIKTOK_CLIENT_ID,
         "response_type": "code",
@@ -48,20 +165,21 @@ def login(request):
         "code_challenge": code_challenge,
         "code_challenge_method": "S256"
     }
-    
+
     auth_url = f"{base_url}?{urllib.parse.urlencode(params)}"
     return redirect(auth_url)
 
+
 def callback(request):
-    """Handles the TikTok callback from Ngrok, exchanges code for tokens."""
+    """Handles the TikTok callback, exchanges code for tokens, fetches profile."""
     auth_code = request.GET.get('code')
     if not auth_code:
         return HttpResponse("Authentication failed! No code found.", status=400)
-        
+
     code_verifier = request.session.get('code_verifier')
     if not code_verifier:
         return HttpResponse("Session expired or missing code_verifier.", status=400)
-        
+
     url = "https://open.tiktokapis.com/v2/oauth/token/"
     data = {
         "client_key": config.TIKTOK_CLIENT_ID,
@@ -71,14 +189,14 @@ def callback(request):
         "redirect_uri": config.REDIRECT_URI,
         "code_verifier": code_verifier
     }
-    
+
     try:
         response = requests.post(url, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
         response.raise_for_status()
-        
+
         resp_data = response.json()
         token_data = resp_data.get("data", resp_data)
-        
+
         if "access_token" in token_data:
             token = Token(
                 access_token=token_data["access_token"],
@@ -86,48 +204,95 @@ def callback(request):
                 expires_at=time.time() + token_data.get("expires_in", 86400)
             )
             Storage.save_tokens(token)
-            return render(request, 'core/success.html')
+            _fetch_and_save_profile()
+            Storage.add_activity("🔗", "Connected TikTok account")
+            return redirect('dashboard')
         else:
             return HttpResponse(f"Failed to fetch tokens: {resp_data}", status=400)
     except Exception as e:
         return HttpResponse(f"Error exchanging tokens: {str(e)}", status=500)
 
+
 @csrf_exempt
 def schedule_post(request):
     """Schedules a new post via Celery ETA."""
+    if request.method != 'POST':
+        return HttpResponse("Method not allowed", status=405)
+
+    media_file = request.FILES.get('media_file')
+    caption = request.POST.get('caption', '')
+    hashtags = request.POST.get('hashtags', '')
+    privacy = request.POST.get('privacy', 'SELF_ONLY')
+    schedule_time_str = request.POST.get('schedule')
+    allow_comments = request.POST.get('allow_comments') == 'on'
+    allow_duet = request.POST.get('allow_duet') == 'on'
+    allow_stitch = request.POST.get('allow_stitch') == 'on'
+
+    if not all([media_file, schedule_time_str]):
+        return JsonResponse({'error': 'Missing required fields (file or schedule time)'}, status=400)
+
+    fs = FileSystemStorage()
+    filename = fs.save(media_file.name, media_file)
+    media_absolute_path = fs.path(filename)
+
+    try:
+        run_date = datetime.fromisoformat(schedule_time_str)
+        run_date = timezone.make_aware(run_date)
+    except ValueError:
+        return JsonResponse({'error': 'Invalid schedule format. Use ISO format.'}, status=400)
+
+    post = Post(
+        id=str(uuid.uuid4()),
+        media=media_absolute_path,
+        caption=caption,
+        schedule=schedule_time_str,
+        hashtags=hashtags,
+        privacy=privacy,
+        allow_comments=allow_comments,
+        allow_duet=allow_duet,
+        allow_stitch=allow_stitch,
+    )
+
+    posts = Storage.load_schedule()
+    posts.append(post)
+    Storage.save_schedule(posts)
+
+    upload_post_task.apply_async((post.id,), eta=run_date)
+    Storage.add_activity("📅", f"Scheduled post: {caption or media_file.name}")
+
+    return redirect('dashboard')
+
+
+def delete_post(request, post_id):
     if request.method == 'POST':
-        media_file = request.FILES.get('media_file')
-        caption = request.POST.get('caption')
-        schedule_time_str = request.POST.get('schedule')  # e.g. "2026-07-11T09:00"
-        
-        if not all([media_file, schedule_time_str]):
-            return JsonResponse({'error': 'Missing required fields (file or schedule time)'}, status=400)
-            
-        fs = FileSystemStorage()
-        filename = fs.save(media_file.name, media_file)
-        media_absolute_path = fs.path(filename)
-            
-        try:
-            run_date = datetime.fromisoformat(schedule_time_str)
-            run_date = timezone.make_aware(run_date)
-        except ValueError:
-            return JsonResponse({'error': 'Invalid schedule format. Use ISO format.'}, status=400)
-            
-        post = Post(
-            id=str(uuid.uuid4()),
-            media=media_absolute_path,
-            caption=caption,
-            schedule=schedule_time_str
-        )
-        
-        # Save to JSON database
-        posts = Storage.load_schedule()
-        posts.append(post)
-        Storage.save_schedule(posts)
-        
-        # Schedule the Celery task (using ETA)
-        upload_post_task.apply_async((post.id,), eta=run_date)
-        
-        return redirect('dashboard')
-        
-    return HttpResponse("Method not allowed", status=405)
+        deleted = Storage.delete_post(post_id)
+        if deleted:
+            Storage.add_activity("🗑️", "Deleted a scheduled post")
+    return redirect('dashboard')
+
+
+def refresh_account(request):
+    profile = _fetch_and_save_profile()
+    if profile:
+        Storage.add_activity("🔄", "Refreshed account info")
+    return redirect('dashboard')
+
+
+def disconnect(request):
+    Storage.clear_tokens()
+    Storage.clear_profile()
+    Storage.add_activity("🔌", "Disconnected TikTok account")
+    return redirect('index')
+
+
+def save_settings(request):
+    if request.method == 'POST':
+        Storage.save_settings({
+            "timezone": request.POST.get('timezone', 'UTC'),
+            "auto_refresh": request.POST.get('auto_refresh') == 'on',
+            "default_privacy": request.POST.get('default_privacy', 'SELF_ONLY'),
+            "default_hashtags": request.POST.get('default_hashtags', ''),
+            "notification_email": request.POST.get('notification_email', ''),
+        })
+        Storage.add_activity("⚙️", "Updated settings")
+    return redirect('dashboard')
