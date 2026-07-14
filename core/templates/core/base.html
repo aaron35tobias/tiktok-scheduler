@@ -159,10 +159,117 @@
             70% { box-shadow: 0 0 0 15px rgba(105, 201, 208, 0); }
             100% { box-shadow: 0 0 0 0 rgba(105, 201, 208, 0); }
         }
+
+        /* Help / About floating button (top-right) with hover tooltip */
+        .help-about {
+            position: fixed;
+            top: 20px;
+            right: 24px;
+            z-index: 1000;
+        }
+
+        .help-about-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            border: 1px solid var(--surface-border);
+            padding: 10px 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .help-about-btn .help-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--tk-cyan);
+            color: #06232a;
+            font-weight: 800;
+            font-size: 0.8rem;
+        }
+
+        .help-about:hover .help-about-btn,
+        .help-about:focus-within .help-about-btn {
+            border-color: rgba(105, 201, 208, 0.6);
+            box-shadow: 0 0 18px rgba(105, 201, 208, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .help-about-tooltip {
+            position: absolute;
+            top: calc(100% + 12px);
+            right: 0;
+            width: 290px;
+            background: rgba(18, 18, 26, 0.98);
+            border: 1px solid var(--surface-border);
+            border-radius: 14px;
+            padding: 16px 18px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5),
+                        0 0 30px rgba(105, 201, 208, 0.15);
+            text-align: left;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-6px);
+            pointer-events: none;
+            transition: opacity var(--transition-speed) ease,
+                        transform var(--transition-speed) ease,
+                        visibility var(--transition-speed);
+        }
+
+        .help-about:hover .help-about-tooltip,
+        .help-about:focus-within .help-about-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .help-about-tooltip .ha-row { margin-bottom: 12px; }
+        .help-about-tooltip .ha-row:last-child { margin-bottom: 0; }
+
+        .help-about-tooltip .ha-label {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--tk-cyan);
+            margin-bottom: 4px;
+        }
+
+        .help-about-tooltip p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 0.83rem;
+            line-height: 1.5;
+        }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
+    <div class="help-about" tabindex="0">
+        <button class="help-about-btn" aria-label="Help and About">
+            <span class="help-icon">?</span> Help / About
+        </button>
+        <div class="help-about-tooltip" role="tooltip">
+            <div class="ha-row">
+                <span class="ha-label">About</span>
+                <p>Wisoft TikTok Automator — schedule your TikTok posts and let background workers publish them automatically at the right time.</p>
+            </div>
+            <div class="ha-row">
+                <span class="ha-label">Help</span>
+                <p>Click “Connect with TikTok”, then upload a video, add a caption, and pick a time to schedule your post.</p>
+            </div>
+        </div>
+    </div>
     <div class="container">
         {% block content %}{% endblock %}
     </div>
