@@ -21,8 +21,15 @@ def upload_post_task(post_id):
     try:
         post.status = "Uploading"
         Storage.save_schedule(posts)
-        
-        publish_id = uploader.upload_media(post.media, post.caption)
+
+        publish_id = uploader.upload_media(
+            post.media,
+            post.full_caption,
+            privacy_level=post.privacy or "SELF_ONLY",
+            disable_comment=not post.allow_comments,
+            disable_duet=not post.allow_duet,
+            disable_stitch=not post.allow_stitch,
+        )
         
         post.publish_id = publish_id
         post.status = "Published"

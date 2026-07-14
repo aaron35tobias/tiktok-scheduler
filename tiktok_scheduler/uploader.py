@@ -7,7 +7,11 @@ from .api import api_client
 logger = logging.getLogger(__name__)
 
 class TikTokUploader:
-    def upload_media(self, file_path: str, caption: str = "") -> str:
+    def upload_media(self, file_path: str, caption: str = "",
+                     privacy_level: str = "SELF_ONLY",
+                     disable_comment: bool = False,
+                     disable_duet: bool = False,
+                     disable_stitch: bool = False) -> str:
         """
         Initializes and uploads media to TikTok APIs.
         Returns the publish_id.
@@ -49,7 +53,8 @@ class TikTokUploader:
                 },
                 "post_info": {
                     "title": caption if caption else "Photo Upload",
-                    "privacy_level": "SELF_ONLY"
+                    "privacy_level": privacy_level,
+                    "disable_comment": disable_comment,
                 }
             }
         else:
@@ -65,7 +70,10 @@ class TikTokUploader:
                 },
                 "post_info": {
                     "title": caption if caption else "Video Upload",
-                    "privacy_level": "SELF_ONLY"
+                    "privacy_level": privacy_level,
+                    "disable_comment": disable_comment,
+                    "disable_duet": disable_duet,
+                    "disable_stitch": disable_stitch,
                 }
             }
             
