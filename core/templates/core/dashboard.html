@@ -2,336 +2,361 @@
 
 {% block extra_head %}
 <style>
-    /* Widen the shell for a dashboard layout */
-    .container { max-width: 1320px; align-items: stretch; }
+    /* Keep the app's background; break out of the centered container for a full dashboard */
+    .container { max-width: 100%; padding: 0; align-items: stretch; }
+    .help-about { display: none; }  /* hide landing-page help button here */
 
-    .dash-grid {
-        display: grid;
-        grid-template-columns: 230px 1fr;
-        gap: 26px;
-        width: 100%;
-        align-items: start;
+    :root {
+        --card: rgba(255,255,255,0.028);
+        --card-border: rgba(255,255,255,0.08);
+        --sidebar-bg: rgba(9,11,15,0.72);
+        --muted: #8b90a0;
     }
-    @media (max-width: 900px) { .dash-grid { grid-template-columns: 1fr; } }
+
+    .shell { display: flex; min-height: 100vh; width: 100%; }
 
     /* ---------- Sidebar ---------- */
     .sidebar {
-        position: sticky;
-        top: 20px;
-        background: var(--surface-color);
-        border: 1px solid var(--surface-border);
-        border-radius: 20px;
-        padding: 22px 16px;
-        backdrop-filter: blur(16px);
+        position: fixed; left: 0; top: 0; bottom: 0;
+        width: 236px;
+        background: var(--sidebar-bg);
+        border-right: 1px solid var(--card-border);
+        backdrop-filter: blur(14px);
+        display: flex; flex-direction: column;
+        padding: 22px 14px;
+        z-index: 20;
     }
-    .sidebar .logo {
-        font-weight: 800;
-        font-size: 1.15rem;
-        padding: 4px 12px 18px;
-        letter-spacing: -0.02em;
-    }
-    .sidebar .logo span { color: var(--tk-cyan); }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 6px 10px 26px; }
+    .brand .mark { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--tk-cyan), #3fa9b3); display: flex; align-items: center; justify-content: center; }
+    .brand .mark svg { width: 17px; height: 17px; color: #06232a; }
+    .brand .name { font-weight: 700; font-size: 1.02rem; letter-spacing: -0.01em; }
     .nav-link {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 11px 14px;
-        border-radius: 12px;
-        color: var(--text-secondary);
-        text-decoration: none;
-        font-weight: 600;
-        font-size: 0.92rem;
-        transition: all var(--transition-speed);
-        margin-bottom: 2px;
+        display: flex; align-items: center; gap: 13px;
+        padding: 11px 13px; border-radius: 10px;
+        color: var(--muted); text-decoration: none;
+        font-weight: 500; font-size: 0.92rem;
+        transition: background 0.15s, color 0.15s; margin-bottom: 3px;
     }
-    .nav-link:hover { background: rgba(255,255,255,0.06); color: var(--text-primary); transform: translateX(3px); }
-    .nav-link.active { background: linear-gradient(90deg, rgba(105,201,208,0.18), transparent); color: var(--tk-cyan); }
-    .nav-link .soon { margin-left: auto; font-size: 0.6rem; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 6px; letter-spacing: 0.04em; }
-    .nav-sep { height: 1px; background: var(--surface-border); margin: 12px 6px; }
-    .nav-link.logout { color: var(--tk-red); }
+    .nav-link svg { width: 19px; height: 19px; flex-shrink: 0; }
+    .nav-link:hover { background: rgba(255,255,255,0.05); color: var(--text-primary); }
+    .nav-link.active { background: rgba(105,201,208,0.12); color: var(--tk-cyan); }
+    .nav-link .soon { margin-left: auto; font-size: 0.58rem; color: var(--muted); border: 1px solid var(--card-border); padding: 1px 5px; border-radius: 5px; }
+    .nav-spacer { flex: 1; }
+    .nav-link.logout { color: var(--muted); }
+    .nav-link.logout:hover { color: var(--tk-red); background: rgba(238,29,82,0.08); }
 
     /* ---------- Main ---------- */
-    .dash-main { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
-    .section-title { font-size: 1.15rem; margin: 0 0 16px; }
-    .card {
-        background: var(--surface-color);
-        border: 1px solid var(--surface-border);
-        border-radius: 18px;
-        padding: 24px;
-        backdrop-filter: blur(16px);
+    .main { flex: 1; margin-left: 236px; padding: 30px 40px 60px; min-width: 0; }
+    @media (max-width: 820px) {
+        .sidebar { position: static; width: 100%; flex-direction: row; flex-wrap: wrap; height: auto; }
+        .main { margin-left: 0; padding: 24px 20px; }
+        .nav-spacer { display: none; }
     }
 
-    /* Top bar */
-    .dash-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-    .dash-top h1 { font-size: 1.6rem; margin: 0; }
-    .pill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; }
-    .pill.ok { background: rgba(43,213,118,0.14); color: #2bd576; }
-    .pill.off { background: rgba(238,29,82,0.14); color: var(--tk-red); }
-    .pill .led { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
+    .page-head h1 { font-size: 1.7rem; margin: 0; font-weight: 700; }
+    .head-user { text-align: right; font-size: 0.85rem; line-height: 1.7; }
+    .head-user .u-name { font-weight: 600; color: var(--text-primary); }
+    .head-user .u-sub { color: var(--muted); }
+    .head-user .u-status { color: #2bd576; font-weight: 600; }
+    .head-user .u-status.off { color: var(--tk-red); }
 
-    /* Account info */
-    .account { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-    .avatar { width: 76px; height: 76px; border-radius: 50%; object-fit: cover; border: 2px solid var(--tk-cyan); background: rgba(255,255,255,0.05); }
-    .avatar.placeholder { display: flex; align-items: center; justify-content: center; font-size: 2rem; }
-    .account-meta h3 { margin: 0; font-size: 1.2rem; }
-    .account-meta .handle { color: var(--tk-cyan); font-size: 0.9rem; }
-    .account-nums { display: flex; gap: 26px; margin-left: auto; flex-wrap: wrap; }
-    .account-nums .num { text-align: center; }
-    .account-nums .num b { display: block; font-size: 1.25rem; }
-    .account-nums .num span { color: var(--text-secondary); font-size: 0.78rem; }
+    .card {
+        background: var(--card);
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        padding: 26px;
+        margin-bottom: 22px;
+    }
+    .card h2 { font-size: 1.05rem; font-weight: 600; margin: 0 0 20px; }
+
+    /* Account card */
+    .account { display: flex; align-items: center; gap: 22px; }
+    .avatar { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; background: rgba(255,255,255,0.05); }
+    .avatar.placeholder { display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--muted); }
+    .acc-name { font-size: 1.5rem; font-weight: 700; margin: 0 0 8px; }
+    .openid { display: inline-block; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.78rem; color: var(--muted); background: rgba(255,255,255,0.05); border: 1px solid var(--card-border); padding: 4px 10px; border-radius: 7px; }
+    .acc-stats { display: flex; gap: 30px; margin-left: auto; }
+    .acc-stats .n { text-align: center; }
+    .acc-stats .n b { display: block; font-size: 1.2rem; font-weight: 700; }
+    .acc-stats .n span { color: var(--muted); font-size: 0.76rem; }
+    .connect-cta { margin-left: auto; }
 
     /* Stat cards */
-    .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-    @media (max-width: 700px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
-    .stat {
-        border-radius: 16px; padding: 20px; border: 1px solid var(--surface-border);
-        background: rgba(0,0,0,0.2); transition: transform var(--transition-speed), box-shadow var(--transition-speed);
-    }
-    .stat:hover { transform: translateY(-4px); box-shadow: 0 10px 30px -12px rgba(0,0,0,0.6); }
-    .stat .val { font-size: 2rem; font-weight: 800; line-height: 1; }
-    .stat .lbl { color: var(--text-secondary); font-size: 0.82rem; margin-top: 8px; }
-    .stat.s-cyan .val { color: var(--tk-cyan); }
-    .stat.s-green .val { color: #2bd576; }
-    .stat.s-amber .val { color: #ffb020; }
-    .stat.s-red .val { color: var(--tk-red); }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 22px; }
+    @media (max-width: 760px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+    .stat { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 22px 24px; }
+    .stat .lbl { color: var(--muted); font-size: 0.86rem; margin-bottom: 14px; }
+    .stat .val { font-size: 2.1rem; font-weight: 700; line-height: 1; }
+    .s-cyan .val { color: var(--tk-cyan); }
+    .s-green .val { color: #2bd576; }
+    .s-amber .val { color: #ffb020; }
+    .s-red .val { color: var(--tk-red); }
 
-    /* Quick actions */
-    .quick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
-    @media (max-width: 700px) { .quick-grid { grid-template-columns: repeat(2, 1fr); } }
-    .quick-btn {
-        display: flex; flex-direction: column; align-items: center; gap: 8px;
-        padding: 18px; border-radius: 14px; border: 1px solid var(--surface-border);
-        background: rgba(255,255,255,0.04); color: var(--text-primary); text-decoration: none;
-        font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all var(--transition-speed);
-    }
-    .quick-btn:hover { border-color: var(--tk-cyan); background: rgba(105,201,208,0.08); transform: translateY(-3px); }
-    .quick-btn .qi { font-size: 1.5rem; }
+    /* Grids for lower sections */
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+    @media (max-width: 900px) { .row-2 { grid-template-columns: 1fr; } }
 
     /* Form */
-    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    @media (max-width: 700px) { .field-row { grid-template-columns: 1fr; } }
-    select, textarea {
-        width: 100%; padding: 13px 15px; background: rgba(0,0,0,0.2);
-        border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: var(--text-primary);
-        font-size: 1rem; font-family: 'Inter', sans-serif; box-sizing: border-box;
+    label { display: block; margin-bottom: 7px; font-weight: 500; color: var(--muted); font-size: 0.86rem; }
+    .form-group { margin-bottom: 18px; }
+    select, textarea, input[type="text"], input[type="datetime-local"] {
+        width: 100%; padding: 12px 14px; background: rgba(0,0,0,0.22);
+        border: 1px solid var(--card-border); border-radius: 10px; color: var(--text-primary);
+        font-size: 0.95rem; font-family: 'Inter', sans-serif; box-sizing: border-box;
     }
-    select:focus, textarea:focus { outline: none; border-color: var(--tk-cyan); }
-    textarea { resize: vertical; min-height: 70px; }
-    .toggles { display: flex; gap: 20px; flex-wrap: wrap; }
-    .toggle { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 0.9rem; cursor: pointer; }
-    .toggle input { width: 16px; height: 16px; accent-color: var(--tk-cyan); }
+    select:focus, textarea:focus, input:focus { outline: none; border-color: var(--tk-cyan); }
+    textarea { resize: vertical; min-height: 68px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 600px) { .field-row { grid-template-columns: 1fr; } }
+    .toggles { display: flex; gap: 18px; flex-wrap: wrap; padding-top: 8px; }
+    .toggle { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 0.88rem; cursor: pointer; }
+    .toggle input { width: 15px; height: 15px; accent-color: var(--tk-cyan); }
 
     .file-drop-area {
         position: relative; display: flex; align-items: center; justify-content: center; flex-direction: column;
-        width: 100%; padding: 26px 20px; background: rgba(0,0,0,0.2); border: 2px dashed rgba(255,255,255,0.2);
-        border-radius: 12px; transition: 0.3s; box-sizing: border-box; text-align: center; cursor: pointer;
+        width: 100%; padding: 26px 20px; background: rgba(0,0,0,0.22); border: 1.5px dashed var(--card-border);
+        border-radius: 10px; transition: 0.2s; box-sizing: border-box; text-align: center; cursor: pointer;
     }
-    .file-drop-area:hover, .file-drop-area.is-active { background: rgba(255,255,255,0.05); border-color: var(--tk-cyan); }
+    .file-drop-area:hover, .file-drop-area.is-active { background: rgba(255,255,255,0.04); border-color: var(--tk-cyan); }
     .file-drop-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-    .file-msg { font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); margin-top: 10px; }
+    .file-msg { font-size: 0.88rem; color: var(--muted); margin-top: 9px; }
     #media-preview { margin-top: 14px; display: none; }
-    #media-preview img, #media-preview video { max-width: 100%; max-height: 220px; border-radius: 12px; }
+    #media-preview img, #media-preview video { max-width: 100%; max-height: 200px; border-radius: 10px; }
+
+    .btn-primary { font-size: 0.98rem; }
 
     /* Table */
     .table-wrap { overflow-x: auto; }
     table.posts { width: 100%; border-collapse: collapse; }
-    table.posts th, table.posts td { text-align: left; padding: 12px 12px; border-bottom: 1px solid var(--surface-border); font-size: 0.88rem; vertical-align: middle; }
-    table.posts th { color: var(--text-secondary); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; }
-    .status-badge { padding: 4px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; white-space: nowrap; }
-    .st-Pending, .st-Uploading { background: rgba(255,176,32,0.16); color: #ffb020; }
-    .st-Published { background: rgba(43,213,118,0.16); color: #2bd576; }
-    .st-Failed { background: rgba(238,29,82,0.16); color: var(--tk-red); }
-    .st-Draft { background: rgba(105,201,208,0.16); color: var(--tk-cyan); }
-    .act-btn { padding: 5px 10px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; border: 1px solid var(--surface-border); background: transparent; color: var(--text-secondary); cursor: pointer; text-decoration: none; }
-    .act-btn.danger { color: var(--tk-red); border-color: rgba(238,29,82,0.4); }
+    table.posts th, table.posts td { text-align: left; padding: 13px 12px; border-bottom: 1px solid var(--card-border); font-size: 0.88rem; vertical-align: middle; }
+    table.posts th { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+    table.posts tr:last-child td { border-bottom: none; }
+    .status-badge { padding: 4px 11px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
+    .st-Pending, .st-Uploading { background: rgba(255,176,32,0.14); color: #ffb020; }
+    .st-Published { background: rgba(43,213,118,0.14); color: #2bd576; }
+    .st-Failed { background: rgba(238,29,82,0.14); color: var(--tk-red); }
+    .act-btn { padding: 5px 11px; border-radius: 7px; font-size: 0.78rem; font-weight: 600; border: 1px solid var(--card-border); background: transparent; color: var(--muted); cursor: pointer; text-decoration: none; }
+    .act-btn.danger { color: var(--tk-red); border-color: rgba(238,29,82,0.35); }
     .act-btn.danger:hover { background: var(--tk-red); color: #fff; }
 
     /* Calendar */
     .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
-    .cal-head { text-align: center; color: var(--text-secondary); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; padding-bottom: 4px; }
-    .cal-cell { min-height: 68px; border-radius: 10px; border: 1px solid var(--surface-border); padding: 6px 8px; background: rgba(0,0,0,0.15); font-size: 0.82rem; }
+    .cal-head { text-align: center; color: var(--muted); font-size: 0.7rem; font-weight: 600; text-transform: uppercase; padding-bottom: 4px; }
+    .cal-cell { min-height: 64px; border-radius: 9px; border: 1px solid var(--card-border); padding: 6px 8px; background: rgba(0,0,0,0.15); font-size: 0.8rem; }
     .cal-cell.out { opacity: 0.3; }
-    .cal-cell.today { border-color: var(--tk-cyan); box-shadow: inset 0 0 0 1px var(--tk-cyan); }
-    .cal-dot { display: inline-block; margin-top: 4px; font-size: 0.68rem; color: var(--tk-cyan); background: rgba(105,201,208,0.12); border-radius: 6px; padding: 1px 5px; }
+    .cal-cell.today { border-color: var(--tk-cyan); }
+    .cal-dot { display: inline-block; margin-top: 4px; font-size: 0.66rem; color: var(--tk-cyan); background: rgba(105,201,208,0.12); border-radius: 5px; padding: 1px 5px; }
 
-    /* Activity / notifications */
-    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-    @media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } }
-    .feed-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--surface-border); font-size: 0.88rem; align-items: flex-start; }
+    /* Feeds */
+    .feed-item { display: flex; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--card-border); font-size: 0.88rem; align-items: flex-start; }
     .feed-item:last-child { border-bottom: none; }
-    .feed-item .fi-time { margin-left: auto; color: var(--text-secondary); font-size: 0.72rem; white-space: nowrap; }
-    .note-item { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 10px; margin-bottom: 8px; font-size: 0.86rem; border: 1px solid var(--surface-border); }
-    .note-item.success { background: rgba(43,213,118,0.08); color: #2bd576; }
-    .note-item.warning { background: rgba(255,176,32,0.08); color: #ffb020; }
-    .note-item.error { background: rgba(238,29,82,0.08); color: var(--tk-red); }
-    .empty-mini { color: var(--text-secondary); text-align: center; padding: 20px; font-size: 0.88rem; }
+    .feed-item .fi-time { margin-left: auto; color: var(--muted); font-size: 0.72rem; white-space: nowrap; }
+    .note-item { display: flex; gap: 10px; align-items: center; padding: 11px 13px; border-radius: 9px; margin-bottom: 9px; font-size: 0.86rem; border: 1px solid var(--card-border); }
+    .note-item.success { color: #2bd576; }
+    .note-item.warning { color: #ffb020; }
+    .note-item.error { color: var(--tk-red); }
+    .empty-mini { color: var(--muted); text-align: center; padding: 22px; font-size: 0.88rem; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="dash-grid">
+<div class="shell">
 
     <!-- ============ SIDEBAR ============ -->
     <aside class="sidebar">
-        <div class="logo">Wisoft <span>Automator</span></div>
-        <a href="#overview" class="nav-link active">📊 Dashboard</a>
-        <a href="#new-post" class="nav-link">➕ New Post</a>
-        <a href="#scheduled" class="nav-link">🗂️ Scheduled Posts</a>
-        <a href="#calendar" class="nav-link">📆 Calendar</a>
-        <a href="#" class="nav-link">📝 Drafts <span class="soon">SOON</span></a>
-        <a href="#" class="nav-link">🎞️ Media Library <span class="soon">SOON</span></a>
-        <a href="#" class="nav-link">📈 Analytics <span class="soon">SOON</span></a>
-        <a href="#settings" class="nav-link">⚙️ Settings</a>
-        <div class="nav-sep"></div>
-        <a href="{% url 'disconnect' %}" class="nav-link logout">🚪 Logout</a>
+        <div class="brand">
+            <span class="mark">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+            </span>
+            <span class="name">TikTok Scheduler</span>
+        </div>
+
+        <a href="#overview" class="nav-link active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+            Dashboard
+        </a>
+        <a href="#new-post" class="nav-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Post
+        </a>
+        <a href="#scheduled" class="nav-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Scheduled Posts
+        </a>
+        <a href="#" class="nav-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Drafts <span class="soon">soon</span>
+        </a>
+        <a href="#" class="nav-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Media Library <span class="soon">soon</span>
+        </a>
+        <a href="#activity" class="nav-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Activity / Logs
+        </a>
+        <a href="#settings" class="nav-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Settings
+        </a>
+
+        <div class="nav-spacer"></div>
+        <a href="{% url 'disconnect' %}" class="nav-link logout">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Logout
+        </a>
     </aside>
 
     <!-- ============ MAIN ============ -->
-    <div class="dash-main">
+    <div class="main">
 
-        <!-- Top bar -->
-        <div class="dash-top" id="overview">
+        <div class="page-head" id="overview">
             <h1>Dashboard</h1>
-            <div style="display:flex; align-items:center; gap:12px;">
+            <div class="head-user">
+                <div class="u-name">{{ profile.display_name|default:"Not connected" }}</div>
+                <div class="u-sub">Last Connected: {{ last_connected }}</div>
                 {% if connected %}
-                <span class="pill ok"><span class="led"></span> Connected</span>
+                <div class="u-status">● Connected</div>
                 {% else %}
-                <span class="pill off"><span class="led"></span> Not connected</span>
+                <div class="u-status off">● Not connected</div>
                 {% endif %}
-                <a href="{% url 'refresh_account' %}" class="act-btn">🔄 Refresh</a>
             </div>
         </div>
 
-        <!-- Section 1: Account Information -->
+        <!-- Account Information -->
         <div class="card">
-            <h2 class="section-title">Account Information</h2>
-            {% if profile %}
             <div class="account">
                 {% if profile.avatar_url %}
                 <img class="avatar" src="{{ profile.avatar_url }}" alt="avatar">
                 {% else %}
                 <div class="avatar placeholder">👤</div>
                 {% endif %}
-                <div class="account-meta">
-                    <h3>{{ profile.display_name|default:"My Account" }} {% if profile.is_verified %}✔️{% endif %}</h3>
-                    <div class="handle">@{{ profile.username|default:"username" }}</div>
-                    <div style="margin-top:6px;"><span class="pill ok" style="font-size:0.72rem;"><span class="led"></span> Connected</span></div>
+                <div>
+                    <h3 class="acc-name">{{ profile.display_name|default:"No account connected" }} {% if profile.is_verified %}✔️{% endif %}</h3>
+                    {% if profile.open_id %}
+                    <span class="openid">Open ID: {{ profile.open_id }}</span>
+                    {% elif profile.username %}
+                    <span class="openid">@{{ profile.username }}</span>
+                    {% else %}
+                    <span class="openid">Connect TikTok to load your profile</span>
+                    {% endif %}
                 </div>
-                <div class="account-nums">
-                    <div class="num"><b>{{ profile.follower_count|default:"—" }}</b><span>Followers</span></div>
-                    <div class="num"><b>{{ profile.following_count|default:"—" }}</b><span>Following</span></div>
-                    <div class="num"><b>{{ profile.video_count|default:"—" }}</b><span>Videos</span></div>
-                    <div class="num"><b>{{ profile.likes_count|default:"—" }}</b><span>Likes</span></div>
+                {% if profile.follower_count is not None %}
+                <div class="acc-stats">
+                    <div class="n"><b>{{ profile.follower_count }}</b><span>Followers</span></div>
+                    <div class="n"><b>{{ profile.following_count|default:0 }}</b><span>Following</span></div>
+                    <div class="n"><b>{{ profile.video_count|default:0 }}</b><span>Videos</span></div>
                 </div>
-            </div>
-            {% else %}
-            <div class="account">
-                <div class="avatar placeholder">👤</div>
-                <div class="account-meta">
-                    <h3>No account connected</h3>
-                    <div class="handle">Connect TikTok to see your profile</div>
-                </div>
-                <div style="margin-left:auto;"><a href="{% url 'login' %}" class="btn-primary" style="padding:10px 20px;">Connect with TikTok</a></div>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Section 2: Statistics Cards -->
-        <div class="stat-grid">
-            <div class="stat s-cyan"><div class="val">{{ stats.scheduled }}</div><div class="lbl">Scheduled Posts</div></div>
-            <div class="stat s-green"><div class="val">{{ stats.published_today }}</div><div class="lbl">Published Today</div></div>
-            <div class="stat s-amber"><div class="val">{{ stats.pending }}</div><div class="lbl">Pending</div></div>
-            <div class="stat s-red"><div class="val">{{ stats.failed }}</div><div class="lbl">Failed</div></div>
-        </div>
-
-        <!-- Section 3: Quick Actions -->
-        <div class="card">
-            <h2 class="section-title">Quick Actions</h2>
-            <div class="quick-grid">
-                <a href="#new-post" class="quick-btn"><span class="qi">⬆️</span> Upload New Post</a>
-                <a href="#calendar" class="quick-btn"><span class="qi">📆</span> View Calendar</a>
-                <a href="#scheduled" class="quick-btn"><span class="qi">🗂️</span> Scheduled Posts</a>
-                <a href="{% url 'refresh_account' %}" class="quick-btn"><span class="qi">🔄</span> Refresh Account</a>
+                {% elif not connected %}
+                <div class="connect-cta"><a href="{% url 'login' %}" class="btn-primary" style="padding:11px 22px;">Connect with TikTok</a></div>
+                {% endif %}
             </div>
         </div>
 
-        <!-- Section 4: Create New Scheduled Post -->
-        <div class="card" id="new-post">
-            <h2 class="section-title">Create New Scheduled Post</h2>
-            <form action="{% url 'schedule_post' %}" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label>Upload Video / Image</label>
-                    <div class="file-drop-area" id="drop-area">
-                        <span style="font-size: 2rem;">📁</span>
-                        <span class="file-msg" id="file-msg">Choose File — or Drag &amp; Drop</span>
-                        <input type="file" name="media_file" id="media-file" required accept="video/mp4, image/*">
-                    </div>
-                    <div id="media-preview"></div>
-                </div>
+        <!-- Statistics -->
+        <div class="stats">
+            <div class="stat s-cyan"><div class="lbl">Scheduled Posts</div><div class="val">{{ stats.scheduled }}</div></div>
+            <div class="stat s-green"><div class="lbl">Published Today</div><div class="val">{{ stats.published_today }}</div></div>
+            <div class="stat s-amber"><div class="lbl">Pending</div><div class="val">{{ stats.pending }}</div></div>
+            <div class="stat s-red"><div class="lbl">Failed</div><div class="val">{{ stats.failed }}</div></div>
+        </div>
 
-                <div class="form-group">
-                    <label>Caption</label>
-                    <textarea name="caption" placeholder="Write your caption…" required></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>Hashtags</label>
-                    <input type="text" name="hashtags" placeholder="#food #travel #business" value="{{ settings.default_hashtags }}">
-                </div>
-
-                <div class="field-row">
+        <div class="row-2">
+            <!-- Create New Scheduled Post -->
+            <div class="card" id="new-post">
+                <h2>Create New Post</h2>
+                <form action="{% url 'schedule_post' %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
                     <div class="form-group">
-                        <label>Privacy</label>
-                        <select name="privacy">
-                            <option value="PUBLIC_TO_EVERYONE" {% if settings.default_privacy == 'PUBLIC_TO_EVERYONE' %}selected{% endif %}>Public</option>
-                            <option value="MUTUAL_FOLLOW_FRIENDS" {% if settings.default_privacy == 'MUTUAL_FOLLOW_FRIENDS' %}selected{% endif %}>Friends</option>
-                            <option value="SELF_ONLY" {% if settings.default_privacy == 'SELF_ONLY' or not settings.default_privacy %}selected{% endif %}>Private (Only me)</option>
-                        </select>
+                        <label>Upload Video / Image</label>
+                        <div class="file-drop-area" id="drop-area">
+                            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="var(--muted)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            <span class="file-msg" id="file-msg">Choose File — or Drag &amp; Drop</span>
+                            <input type="file" name="media_file" id="media-file" required accept="video/mp4, image/*">
+                        </div>
+                        <div id="media-preview"></div>
                     </div>
                     <div class="form-group">
-                        <label>Allow</label>
-                        <div class="toggles" style="padding-top:10px;">
-                            <label class="toggle"><input type="checkbox" name="allow_comments" checked> Comments</label>
-                            <label class="toggle"><input type="checkbox" name="allow_duet" checked> Duet</label>
-                            <label class="toggle"><input type="checkbox" name="allow_stitch" checked> Stitch</label>
+                        <label>Caption</label>
+                        <textarea name="caption" placeholder="Write your caption…" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Hashtags</label>
+                        <input type="text" name="hashtags" placeholder="#food #travel #business" value="{{ settings.default_hashtags }}">
+                    </div>
+                    <div class="field-row">
+                        <div class="form-group">
+                            <label>Privacy</label>
+                            <select name="privacy">
+                                <option value="PUBLIC_TO_EVERYONE" {% if settings.default_privacy == 'PUBLIC_TO_EVERYONE' %}selected{% endif %}>Public</option>
+                                <option value="MUTUAL_FOLLOW_FRIENDS" {% if settings.default_privacy == 'MUTUAL_FOLLOW_FRIENDS' %}selected{% endif %}>Friends</option>
+                                <option value="SELF_ONLY" {% if settings.default_privacy == 'SELF_ONLY' or not settings.default_privacy %}selected{% endif %}>Private (Only me)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Allow</label>
+                            <div class="toggles">
+                                <label class="toggle"><input type="checkbox" name="allow_comments" checked> Comments</label>
+                                <label class="toggle"><input type="checkbox" name="allow_duet" checked> Duet</label>
+                                <label class="toggle"><input type="checkbox" name="allow_stitch" checked> Stitch</label>
+                            </div>
                         </div>
                     </div>
-                </div>
+                    <div class="form-group">
+                        <label>Schedule Date &amp; Time ({{ settings.timezone }})</label>
+                        <input type="datetime-local" name="schedule" required>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%;">Schedule Post</button>
+                    {% if not connected %}
+                    <p style="color:#ffb020; font-size:0.8rem; margin-top:10px;">Not connected — posts queue but won't publish until you connect TikTok.</p>
+                    {% endif %}
+                </form>
+            </div>
 
-                <div class="form-group">
-                    <label>Schedule Date &amp; Time ({{ settings.timezone }})</label>
-                    <input type="datetime-local" name="schedule" required>
+            <!-- Calendar + Notifications -->
+            <div>
+                <div class="card" id="calendar">
+                    <h2>{{ calendar.month_name }}</h2>
+                    <div class="cal-grid">
+                        {% for name in calendar.weekday_names %}<div class="cal-head">{{ name }}</div>{% endfor %}
+                        {% for week in calendar.weeks %}{% for cell in week %}
+                        <div class="cal-cell {% if not cell.in_month %}out{% endif %} {% if cell.is_today %}today{% endif %}">
+                            <div>{{ cell.day }}</div>
+                            {% for p in cell.posts %}<div class="cal-dot" title="{{ p.caption }}">{{ p.schedule_dt|time:"H:i" }}</div>{% endfor %}
+                        </div>
+                        {% endfor %}{% endfor %}
+                    </div>
                 </div>
-
-                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 6px;">Schedule Post</button>
-                {% if not connected %}
-                <p style="color:#ffb020; font-size:0.8rem; margin-top:10px;">⚠️ Not connected — posts will queue but won't publish until you connect TikTok.</p>
-                {% endif %}
-            </form>
+                <div class="card">
+                    <h2>Notifications</h2>
+                    {% for n in notifications %}
+                    <div class="note-item {{ n.type }}"><span>{% if n.type == 'success' %}✓{% elif n.type == 'warning' %}⚠{% else %}✕{% endif %}</span><span>{{ n.message }}</span></div>
+                    {% empty %}
+                    <div class="empty-mini">You're all caught up.</div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
 
-        <!-- Section 5: Scheduled Posts Table -->
+        <!-- Scheduled Posts Table -->
         <div class="card" id="scheduled">
-            <h2 class="section-title">Scheduled Posts</h2>
+            <h2>Scheduled Posts</h2>
             <div class="table-wrap">
                 <table class="posts">
-                    <thead>
-                        <tr><th>Media</th><th>Caption</th><th>Schedule Time</th><th>Status</th><th>Actions</th></tr>
-                    </thead>
+                    <thead><tr><th>Media</th><th>Caption</th><th>Schedule Time</th><th>Status</th><th>Actions</th></tr></thead>
                     <tbody>
                         {% for post in posts reversed %}
                         <tr>
-                            <td style="max-width:150px; word-break:break-all; color:var(--text-secondary);">{{ post.media_filename }}</td>
+                            <td style="max-width:150px; word-break:break-all; color:var(--muted);">{{ post.media_filename }}</td>
                             <td style="max-width:220px;">{{ post.caption|default:"—" }}</td>
                             <td style="white-space:nowrap;">{{ post.schedule }}</td>
                             <td><span class="status-badge st-{{ post.status }}">{{ post.status }}</span></td>
                             <td>
                                 <div style="display:flex; gap:6px;">
-                                    <span class="act-btn" title="Editing coming soon" style="opacity:0.5; cursor:not-allowed;">Edit</span>
+                                    <span class="act-btn" title="Editing coming soon" style="opacity:0.45; cursor:not-allowed;">Edit</span>
                                     <form action="{% url 'delete_post' post.id %}" method="post" onsubmit="return confirm('Delete this post?');" style="display:inline;">
-                                        {% csrf_token %}
-                                        <button type="submit" class="act-btn danger">Delete</button>
+                                        {% csrf_token %}<button type="submit" class="act-btn danger">Delete</button>
                                     </form>
                                 </div>
                             </td>
@@ -344,55 +369,19 @@
             </div>
         </div>
 
-        <!-- Section 6: Calendar -->
-        <div class="card" id="calendar">
-            <h2 class="section-title">📆 {{ calendar.month_name }}</h2>
-            <div class="cal-grid">
-                {% for name in calendar.weekday_names %}<div class="cal-head">{{ name }}</div>{% endfor %}
-                {% for week in calendar.weeks %}
-                    {% for cell in week %}
-                    <div class="cal-cell {% if not cell.in_month %}out{% endif %} {% if cell.is_today %}today{% endif %}">
-                        <div>{{ cell.day }}</div>
-                        {% for p in cell.posts %}
-                        <div class="cal-dot" title="{{ p.caption }}">● {{ p.schedule_dt|time:"H:i" }}</div>
-                        {% endfor %}
-                    </div>
-                    {% endfor %}
-                {% endfor %}
-            </div>
+        <!-- Recent Activity -->
+        <div class="card" id="activity">
+            <h2>Recent Activity</h2>
+            {% for a in activity %}
+            <div class="feed-item"><span>{{ a.icon }}</span><span>{{ a.message }}</span><span class="fi-time">{{ a.time }}</span></div>
+            {% empty %}
+            <div class="empty-mini">No activity yet.</div>
+            {% endfor %}
         </div>
 
-        <!-- Sections 7 + 8: Recent Activity + Notifications -->
-        <div class="two-col">
-            <div class="card">
-                <h2 class="section-title">Recent Activity</h2>
-                {% for a in activity %}
-                <div class="feed-item">
-                    <span>{{ a.icon }}</span>
-                    <span>{{ a.message }}</span>
-                    <span class="fi-time">{{ a.time }}</span>
-                </div>
-                {% empty %}
-                <div class="empty-mini">No activity yet.</div>
-                {% endfor %}
-            </div>
-
-            <div class="card">
-                <h2 class="section-title">Notifications</h2>
-                {% for n in notifications %}
-                <div class="note-item {{ n.type }}">
-                    <span>{% if n.type == 'success' %}✓{% elif n.type == 'warning' %}⚠{% else %}✕{% endif %}</span>
-                    <span>{{ n.message }}</span>
-                </div>
-                {% empty %}
-                <div class="empty-mini">You're all caught up 🎉</div>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- Section 9: Settings -->
+        <!-- Settings -->
         <div class="card" id="settings">
-            <h2 class="section-title">⚙️ Settings</h2>
+            <h2>Settings</h2>
             <form action="{% url 'save_settings' %}" method="post">
                 {% csrf_token %}
                 <div class="field-row">
@@ -419,9 +408,7 @@
                         <input type="text" name="notification_email" value="{{ settings.notification_email }}" placeholder="you@example.com">
                     </div>
                 </div>
-                <label class="toggle" style="margin-bottom:18px;">
-                    <input type="checkbox" name="auto_refresh" {% if settings.auto_refresh %}checked{% endif %}> Auto refresh account info
-                </label>
+                <label class="toggle" style="margin-bottom:18px;"><input type="checkbox" name="auto_refresh" {% if settings.auto_refresh %}checked{% endif %}> Auto refresh account info</label>
                 <div style="display:flex; gap:12px; flex-wrap:wrap;">
                     <button type="submit" class="btn-primary" style="padding:12px 24px;">Save Settings</button>
                     <a href="{% url 'login' %}" class="btn-secondary">Reconnect TikTok</a>
@@ -434,7 +421,6 @@
 </div>
 
 <script>
-    // File input + preview
     const fileInput = document.getElementById('media-file');
     const fileMsg = document.getElementById('file-msg');
     const dropArea = document.getElementById('drop-area');
@@ -447,14 +433,11 @@
             fileMsg.style.color = "var(--tk-cyan)";
             const url = URL.createObjectURL(file);
             preview.style.display = 'block';
-            if (file.type.startsWith('video')) {
-                preview.innerHTML = '<video src="' + url + '" controls muted></video>';
-            } else {
-                preview.innerHTML = '<img src="' + url + '" alt="preview">';
-            }
+            preview.innerHTML = file.type.startsWith('video')
+                ? '<video src="' + url + '" controls muted></video>'
+                : '<img src="' + url + '" alt="preview">';
         }
     });
-
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev =>
         dropArea.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }, false));
     ['dragenter', 'dragover'].forEach(ev =>
@@ -462,19 +445,15 @@
     ['dragleave', 'drop'].forEach(ev =>
         dropArea.addEventListener(ev, () => dropArea.classList.remove('is-active'), false));
 
-    // Sidebar active-link highlight on scroll
     const links = document.querySelectorAll('.nav-link[href^="#"]');
     const map = {};
     links.forEach(l => { const id = l.getAttribute('href').slice(1); if (id) map[id] = l; });
     window.addEventListener('scroll', () => {
         let current = '';
-        document.querySelectorAll('.dash-main [id]').forEach(sec => {
-            if (window.scrollY >= sec.offsetTop - 120) current = sec.id;
+        document.querySelectorAll('.main [id]').forEach(sec => {
+            if (window.scrollY >= sec.offsetTop - 130) current = sec.id;
         });
-        if (map[current]) {
-            links.forEach(l => l.classList.remove('active'));
-            map[current].classList.add('active');
-        }
+        if (map[current]) { links.forEach(l => l.classList.remove('active')); map[current].classList.add('active'); }
     });
 </script>
 {% endblock %}

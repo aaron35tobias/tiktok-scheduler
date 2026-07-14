@@ -131,10 +131,17 @@ def dashboard(request):
     token = Storage.load_tokens()
     profile = Storage.load_profile()
 
+    last_connected = "Never"
+    if token and os.path.exists(config.TOKENS_FILE):
+        last_connected = datetime.fromtimestamp(
+            os.path.getmtime(config.TOKENS_FILE)
+        ).strftime("%d %b %Y, %H:%M")
+
     context = {
         'posts': posts,
         'profile': profile,
         'connected': bool(token and token.access_token),
+        'last_connected': last_connected,
         'stats': _build_stats(posts),
         'calendar': _build_calendar(posts),
         'activity': Storage.load_activity(),
