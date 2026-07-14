@@ -107,7 +107,7 @@ class Storage:
 
     # ---- Settings ----
     DEFAULT_SETTINGS = {
-        "timezone": "UTC",
+        "timezone": "Asia/Dubai",
         "auto_refresh": True,
         "default_privacy": "SELF_ONLY",
         "default_hashtags": "",

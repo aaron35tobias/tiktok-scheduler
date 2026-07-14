@@ -1,4 +1,5 @@
 import os
+import math
 import mimetypes
 import logging
 import requests
@@ -21,7 +22,17 @@ class TikTokUploader:
             mime_type = "application/octet-stream"
             
         file_size = os.path.getsize(file_path)
-        
+
+        # TikTok requires each upload chunk to be between 5MB and 64MB.
+        # Small videos go up in one chunk; large ones are split into equal chunks.
+        MAX_CHUNK = 64 * 1024 * 1024  # 64 MB
+        if file_size <= MAX_CHUNK:
+            chunk_size = file_size
+            total_chunk_count = 1
+        else:
+            total_chunk_count = math.ceil(file_size / MAX_CHUNK)
+            chunk_size = file_size // total_chunk_count
+
         if mime_type.startswith("image/"):
             # We use PULL_FROM_URL for images, using Cloudflare Tunnel URL from REDIRECT_URI
             from dotenv import load_dotenv
@@ -65,8 +76,8 @@ class TikTokUploader:
                 "source_info": {
                     "source": "FILE_UPLOAD",
                     "video_size": file_size,
-                    "chunk_size": file_size,
-                    "total_chunk_count": 1
+                    "chunk_size": chunk_size,
+                    "total_chunk_count": total_chunk_count
                 },
                 "post_info": {
                     "title": caption if caption else "Video Upload",
@@ -89,17 +100,24 @@ class TikTokUploader:
             publish_id = data.get("publish_id")
             
             if upload_url:
-                logger.info(f"Uploading bytes to {upload_url}...")
+                logger.info(f"Uploading {total_chunk_count} chunk(s) to {upload_url}...")
                 with open(file_path, "rb") as f:
-                    file_data = f.read()
-                    
-                upload_headers = {
-                    "Content-Type": mime_type,
-                    "Content-Length": str(file_size),
-                    "Content-Range": f"bytes 0-{file_size - 1}/{file_size}",
-                }
-                upload_res = requests.put(upload_url, data=file_data, headers=upload_headers)
-                upload_res.raise_for_status()
+                    for i in range(total_chunk_count):
+                        start = i * chunk_size
+                        # The final chunk takes all remaining bytes.
+                        end = file_size - 1 if i == total_chunk_count - 1 else start + chunk_size - 1
+                        length = end - start + 1
+                        f.seek(start)
+                        chunk_data = f.read(length)
+
+                        upload_headers = {
+                            "Content-Type": mime_type,
+                            "Content-Length": str(length),
+                            "Content-Range": f"bytes {start}-{end}/{file_size}",
+                        }
+                        upload_res = requests.put(upload_url, data=chunk_data, headers=upload_headers)
+                        upload_res.raise_for_status()
+                        logger.info(f"Uploaded chunk {i + 1}/{total_chunk_count} (bytes {start}-{end})")
                 logger.info(f"Upload complete. Publish ID: {publish_id}")
             else:
                 if not publish_id:
