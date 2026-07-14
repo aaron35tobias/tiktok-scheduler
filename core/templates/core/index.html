@@ -36,18 +36,30 @@
         border-radius: 16px;
         padding: 24px;
         text-align: center;
-        transition: transform var(--transition-speed);
+        transition: transform var(--transition-speed),
+                    box-shadow var(--transition-speed),
+                    border-color var(--transition-speed),
+                    background var(--transition-speed);
+        will-change: transform;
     }
-    
+
     .feature-card:hover {
-        transform: translateY(-5px);
-        background: rgba(255, 255, 255, 0.05);
+        transform: translateY(-8px) scale(1.05);
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(37, 244, 238, 0.55);
+        box-shadow: 0 0 24px rgba(37, 244, 238, 0.35),
+                    0 0 48px rgba(254, 44, 85, 0.22);
     }
-    
+
     .icon {
         font-size: 2rem;
         margin-bottom: 15px;
         display: inline-block;
+        transition: transform var(--transition-speed);
+    }
+
+    .feature-card:hover .icon {
+        transform: scale(1.22);
     }
 </style>
 {% endblock %}
