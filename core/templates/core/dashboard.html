@@ -409,13 +409,14 @@
             <h2>Scheduled Posts History</h2>
             <div class="table-wrap">
                 <table class="posts">
-                    <thead><tr><th>Media</th><th>Caption</th><th>Schedule Time</th><th>Status</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Media</th><th>Caption</th><th>Date</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead>
                     <tbody>
                         {% for post in posts reversed %}
                         <tr>
                             <td style="max-width:150px; word-break:break-all; color:var(--muted);">{{ post.media_filename }}</td>
                             <td style="max-width:220px;">{{ post.caption|default:"—" }}</td>
-                            <td style="white-space:nowrap;">{{ post.schedule }}</td>
+                            <td style="white-space:nowrap;">{{ post.schedule_dt|date:"M j, Y"|default:post.schedule }}</td>
+                            <td style="white-space:nowrap;">{{ post.schedule_dt|time:"g:i A" }}</td>
                             <td><span class="status-badge st-{{ post.status }}">{{ post.status }}</span></td>
                             <td>
                                 <div style="display:flex; gap:6px;">
@@ -427,7 +428,7 @@
                             </td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="5" class="empty-mini">No posts scheduled yet.</td></tr>
+                        <tr><td colspan="6" class="empty-mini">No posts scheduled yet.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
