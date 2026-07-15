@@ -439,7 +439,11 @@
         <div class="card" id="activity">
             <h2>Recent Activity</h2>
             {% for a in activity %}
-            <div class="feed-item"><span>{{ a.icon }}</span><span>{{ a.message }}</span><span class="fi-time">{{ a.time }}</span></div>
+            <div class="feed-item">
+                <span>{{ a.icon }}</span>
+                <span>{{ a.message }}{% if a.account %} <span style="color:var(--muted);">· {{ a.account }}</span>{% endif %}</span>
+                <span class="fi-time">{{ a.time }}</span>
+            </div>
             {% empty %}
             <div class="empty-mini">No activity yet.</div>
             {% endfor %}

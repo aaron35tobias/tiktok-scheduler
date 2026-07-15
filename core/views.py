@@ -158,7 +158,15 @@ def dashboard(request):
     if token and os.path.exists(config.TOKENS_FILE):
         last_connected = datetime.fromtimestamp(
             os.path.getmtime(config.TOKENS_FILE)
-        ).strftime("%d %b %Y, %H:%M")
+        ).strftime("%d %b %Y, %I:%M %p")
+
+    # Recent activity: reformat the stored time to 12-hour AM/PM.
+    activity = Storage.load_activity()
+    for a in activity:
+        try:
+            a["time"] = datetime.strptime(a.get("time", ""), "%Y-%m-%d %H:%M").strftime("%d %b %Y, %I:%M %p")
+        except Exception:
+            pass
 
     context = {
         'posts': posts,
@@ -169,7 +177,7 @@ def dashboard(request):
         'active_open_id': profile.open_id if profile else '',
         'stats': _build_stats(posts),
         'calendar': _build_calendar(posts),
-        'activity': Storage.load_activity(),
+        'activity': activity,
         'notifications': _build_notifications(posts, token),
         'settings': Storage.load_settings(),
     }

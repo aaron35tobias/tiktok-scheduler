@@ -153,11 +153,19 @@ class Storage:
 
     # ---- Activity log ----
     @staticmethod
-    def add_activity(icon: str, message: str):
+    def add_activity(icon: str, message: str, account: str = None):
+        # Record which account the activity is tied to (defaults to the active one).
+        if account is None:
+            prof = Storage.load_profile()
+            if prof:
+                account = ("@" + prof.username) if prof.username else (prof.display_name or "")
+            else:
+                account = ""
         activity = Storage.load_activity()
         activity.insert(0, {
             "icon": icon,
             "message": message,
+            "account": account,
             "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
         })
         activity = activity[:20]  # keep the most recent 20
