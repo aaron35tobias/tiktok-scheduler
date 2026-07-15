@@ -13,18 +13,23 @@ class TikTokAPIClient:
     def __init__(self):
         self.session = requests.Session()
 
-    def _get_headers(self, requires_auth=True, content_type="application/json") -> Dict[str, str]:
+    def _get_headers(self, requires_auth=True, content_type="application/json", access_token=None) -> Dict[str, str]:
         headers = {}
         if content_type:
             headers["Content-Type"] = content_type
-            
+
         if requires_auth:
-            token = Storage.load_tokens()
-            if token and token.access_token:
-                headers["Authorization"] = f"Bearer {token.access_token}"
+            # Prefer an explicitly provided token (e.g. the post's owning account),
+            # otherwise fall back to the active account's stored token.
+            if access_token:
+                headers["Authorization"] = f"Bearer {access_token}"
             else:
-                logger.error("Missing access token for API request.")
-                raise ValueError("Authentication required but no access token available.")
+                token = Storage.load_tokens()
+                if token and token.access_token:
+                    headers["Authorization"] = f"Bearer {token.access_token}"
+                else:
+                    logger.error("Missing access token for API request.")
+                    raise ValueError("Authentication required but no access token available.")
         return headers
 
     def refresh_token(self):
@@ -61,9 +66,10 @@ class TikTokAPIClient:
 
     def _request(self, method: str, endpoint: str, requires_auth=True, **kwargs) -> Dict[str, Any]:
         url = f"{self.BASE_URL}/{endpoint.lstrip('/')}"
-        
+
+        access_token = kwargs.pop('access_token', None)
         headers = kwargs.pop('headers', {})
-        default_headers = self._get_headers(requires_auth, content_type=kwargs.pop('content_type', "application/json"))
+        default_headers = self._get_headers(requires_auth, content_type=kwargs.pop('content_type', "application/json"), access_token=access_token)
         headers.update(default_headers)
         
         # Strip content-type if None to allow requests to calculate it

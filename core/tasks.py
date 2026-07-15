@@ -22,6 +22,15 @@ def upload_post_task(post_id):
         post.status = "Uploading"
         Storage.save_schedule(posts)
 
+        # Publish using the token of the account that owns this post, so a
+        # scheduled post always goes to the right account even if the user
+        # has since switched the active account.
+        access_token = None
+        if post.account_open_id:
+            owner_token = Storage.get_account_token(post.account_open_id)
+            if owner_token:
+                access_token = owner_token.access_token
+
         publish_id = uploader.upload_media(
             post.media,
             post.full_caption,
@@ -29,6 +38,7 @@ def upload_post_task(post_id):
             disable_comment=not post.allow_comments,
             disable_duet=not post.allow_duet,
             disable_stitch=not post.allow_stitch,
+            access_token=access_token,
         )
         
         post.publish_id = publish_id

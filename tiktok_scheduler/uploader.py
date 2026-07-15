@@ -12,7 +12,8 @@ class TikTokUploader:
                      privacy_level: str = "SELF_ONLY",
                      disable_comment: bool = False,
                      disable_duet: bool = False,
-                     disable_stitch: bool = False) -> str:
+                     disable_stitch: bool = False,
+                     access_token: str = None) -> str:
         """
         Initializes and uploads media to TikTok APIs.
         Returns the publish_id.
@@ -90,7 +91,7 @@ class TikTokUploader:
             
         try:
             logger.info(f"Initializing upload for {file_path}")
-            init_response = api_client.post(init_endpoint, json=init_data)
+            init_response = api_client.post(init_endpoint, json=init_data, access_token=access_token)
             
             if "data" not in init_response:
                 raise Exception(f"Failed to initialize upload: {init_response}")

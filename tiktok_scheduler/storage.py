@@ -115,6 +115,14 @@ class Storage:
         return [Profile.from_dict(v.get("profile", {})) for v in reg.values()]
 
     @staticmethod
+    def get_account_token(open_id: str) -> Optional[Token]:
+        reg = Storage._load_registry()
+        entry = reg.get(open_id)
+        if entry:
+            return Token.from_dict(entry["token"])
+        return None
+
+    @staticmethod
     def switch_account(open_id: str) -> bool:
         """Make a registered account the active one."""
         reg = Storage._load_registry()

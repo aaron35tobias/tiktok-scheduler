@@ -127,13 +127,28 @@ def index(request):
 
 def dashboard(request):
     """The full Scheduler Dashboard."""
-    posts = Storage.load_schedule()
+    all_posts = Storage.load_schedule()
     token = Storage.load_tokens()
     profile = Storage.load_profile()
+    active_oid = profile.open_id if profile else ""
 
     # Keep the active account present in the registry (so it always lists).
     if token and profile and profile.open_id:
         Storage.add_account(token, profile)
+
+    # Scope posts to the active account. Legacy posts with no owner are
+    # migrated to the current active account once.
+    if active_oid:
+        migrated = False
+        for p in all_posts:
+            if not p.account_open_id:
+                p.account_open_id = active_oid
+                migrated = True
+        if migrated:
+            Storage.save_schedule(all_posts)
+        posts = [p for p in all_posts if p.account_open_id == active_oid]
+    else:
+        posts = all_posts
 
     last_connected = "Never"
     if token and os.path.exists(config.TOKENS_FILE):
@@ -256,6 +271,9 @@ def schedule_post(request):
     except ValueError:
         return JsonResponse({'error': 'Invalid schedule format. Use ISO format.'}, status=400)
 
+    active_profile = Storage.load_profile()
+    owner_open_id = active_profile.open_id if active_profile else ""
+
     post = Post(
         id=str(uuid.uuid4()),
         media=media_absolute_path,
@@ -266,6 +284,7 @@ def schedule_post(request):
         allow_comments=allow_comments,
         allow_duet=allow_duet,
         allow_stitch=allow_stitch,
+        account_open_id=owner_open_id,
     )
 
     posts = Storage.load_schedule()
