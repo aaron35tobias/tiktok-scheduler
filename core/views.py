@@ -7,6 +7,7 @@ import calendar as pycal
 import logging
 import uuid
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import requests
 from django.utils import timezone
@@ -22,6 +23,16 @@ from tiktok_scheduler.api import api_client
 from .tasks import upload_post_task
 
 logger = logging.getLogger(__name__)
+
+# Common timezones offered in the Settings dropdown.
+COMMON_TIMEZONES = [
+    "UTC",
+    "Asia/Dubai", "Asia/Kolkata", "Asia/Karachi", "Asia/Riyadh",
+    "Asia/Singapore", "Asia/Tokyo", "Asia/Shanghai",
+    "Europe/London", "Europe/Paris", "Europe/Berlin", "Europe/Istanbul",
+    "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
+    "America/Sao_Paulo", "Australia/Sydney", "Pacific/Auckland",
+]
 
 
 # ---------------------------------------------------------------------------
@@ -127,27 +138,79 @@ def index(request):
 
 def dashboard(request):
     """The full Scheduler Dashboard."""
-    posts = Storage.load_schedule()
+    all_posts = Storage.load_schedule()
     token = Storage.load_tokens()
     profile = Storage.load_profile()
+    active_oid = profile.open_id if profile else ""
+
+    # Keep the active account present in the registry (so it always lists).
+    if token and profile and profile.open_id:
+        Storage.add_account(token, profile)
+
+    # Scope posts to the active account (each post is tagged with its owner
+    # when scheduled). Posts with no owner aren't shown under any account.
+    if active_oid:
+        posts = [p for p in all_posts if p.account_open_id == active_oid]
+    else:
+        posts = all_posts
 
     last_connected = "Never"
     if token and os.path.exists(config.TOKENS_FILE):
         last_connected = datetime.fromtimestamp(
             os.path.getmtime(config.TOKENS_FILE)
-        ).strftime("%d %b %Y, %H:%M")
+        ).strftime("%d %b %Y, %I:%M %p")
+
+    # Recent activity: reformat the stored time to 12-hour AM/PM.
+    activity = Storage.load_activity()
+    for a in activity:
+        try:
+            a["time"] = datetime.strptime(a.get("time", ""), "%Y-%m-%d %H:%M").strftime("%d %b %Y, %I:%M %p")
+        except Exception:
+            pass
+
+    # Media Library: every uploaded media file with the account it was posted
+    # with, and its date/time (shown across all accounts).
+    acct_by_oid = {a.open_id: a for a in Storage.list_accounts()}
+    media_items = []
+    for p in reversed(all_posts):
+        if not p.media:
+            continue
+        acc = acct_by_oid.get(p.account_open_id)
+        if acc:
+            acc_label = ("@" + acc.username) if acc.username else (acc.display_name or "Unknown")
+        else:
+            acc_label = "Unknown"
+        fname = p.media_filename
+        ext = fname.rsplit('.', 1)[-1].lower() if '.' in fname else ''
+        media_items.append({
+            'filename': fname,
+            'url': '/media/' + fname,
+            'is_image': ext in ('jpg', 'jpeg', 'png', 'gif', 'webp'),
+            'account': acc_label,
+            'date': p.schedule_dt,
+            'status': p.status,
+        })
 
     context = {
         'posts': posts,
         'profile': profile,
         'connected': bool(token and token.access_token),
         'last_connected': last_connected,
+        'accounts': Storage.list_accounts(),
+        'active_open_id': profile.open_id if profile else '',
         'stats': _build_stats(posts),
         'calendar': _build_calendar(posts),
-        'activity': Storage.load_activity(),
+        'activity': activity,
+        'media_items': media_items,
         'notifications': _build_notifications(posts, token),
         'settings': Storage.load_settings(),
     }
+    # Timezone dropdown options (ensure the saved one is always present).
+    tz_list = list(COMMON_TIMEZONES)
+    current_tz = context['settings'].get('timezone')
+    if current_tz and current_tz not in tz_list:
+        tz_list.insert(0, current_tz)
+    context['timezones'] = tz_list
     return render(request, 'core/dashboard.html', context)
 
 
@@ -211,7 +274,9 @@ def callback(request):
                 expires_at=time.time() + token_data.get("expires_in", 86400)
             )
             Storage.save_tokens(token)
-            _fetch_and_save_profile()
+            prof = _fetch_and_save_profile()
+            if prof:
+                Storage.add_account(token, prof)   # register for multi-account
             Storage.add_activity("🔗", "Connected TikTok account")
             return redirect('dashboard')
         else:
@@ -242,11 +307,19 @@ def schedule_post(request):
     filename = fs.save(media_file.name, media_file)
     media_absolute_path = fs.path(filename)
 
+    # Interpret the entered time in the user's chosen timezone (Settings).
+    tz_name = Storage.load_settings().get('timezone') or 'Asia/Dubai'
     try:
-        run_date = datetime.fromisoformat(schedule_time_str)
-        run_date = timezone.make_aware(run_date)
+        tzinfo = ZoneInfo(tz_name)
+    except Exception:
+        tzinfo = ZoneInfo('Asia/Dubai')
+    try:
+        run_date = datetime.fromisoformat(schedule_time_str).replace(tzinfo=tzinfo)
     except ValueError:
         return JsonResponse({'error': 'Invalid schedule format. Use ISO format.'}, status=400)
+
+    active_profile = Storage.load_profile()
+    owner_open_id = active_profile.open_id if active_profile else ""
 
     post = Post(
         id=str(uuid.uuid4()),
@@ -258,6 +331,7 @@ def schedule_post(request):
         allow_comments=allow_comments,
         allow_duet=allow_duet,
         allow_stitch=allow_stitch,
+        account_open_id=owner_open_id,
     )
 
     posts = Storage.load_schedule()
@@ -285,6 +359,23 @@ def refresh_account(request):
     return redirect('dashboard')
 
 
+def switch_account(request):
+    if request.method == 'POST':
+        open_id = request.POST.get('open_id')
+        if open_id and Storage.switch_account(open_id):
+            Storage.add_activity("🔀", "Switched active account")
+    return redirect('dashboard')
+
+
+def remove_account(request):
+    if request.method == 'POST':
+        open_id = request.POST.get('open_id')
+        if open_id:
+            Storage.remove_account(open_id)
+            Storage.add_activity("🗑️", "Removed a connected account")
+    return redirect('dashboard')
+
+
 def disconnect(request):
     Storage.clear_tokens()
     Storage.clear_profile()
@@ -302,4 +393,11 @@ def save_settings(request):
             "notification_email": request.POST.get('notification_email', ''),
         })
         Storage.add_activity("⚙️", "Updated settings")
+    return redirect('dashboard')
+
+
+def reset_settings(request):
+    if request.method == 'POST':
+        Storage.reset_settings()
+        Storage.add_activity("♻️", "Reset settings to default")
     return redirect('dashboard')

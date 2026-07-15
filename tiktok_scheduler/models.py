@@ -79,6 +79,7 @@ class Post:
     allow_comments: bool = True
     allow_duet: bool = True
     allow_stitch: bool = True
+    account_open_id: str = ""           # which connected account this post belongs to
 
     @property
     def media_filename(self) -> str:
@@ -120,6 +121,7 @@ class Post:
             "allow_comments": self.allow_comments,
             "allow_duet": self.allow_duet,
             "allow_stitch": self.allow_stitch,
+            "account_open_id": self.account_open_id,
         }
 
     @classmethod
@@ -137,4 +139,5 @@ class Post:
             allow_comments=data.get("allow_comments", True),
             allow_duet=data.get("allow_duet", True),
             allow_stitch=data.get("allow_stitch", True),
+            account_open_id=data.get("account_open_id", ""),
         )

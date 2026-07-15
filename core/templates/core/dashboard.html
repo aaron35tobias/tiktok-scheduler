@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block extra_head %}
 <style>
@@ -28,9 +29,9 @@
         z-index: 20;
     }
     .brand { display: flex; align-items: center; gap: 11px; padding: 6px 10px 26px; }
-    .brand .mark { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--tk-cyan), #3fa9b3); display: flex; align-items: center; justify-content: center; }
-    .brand .mark svg { width: 17px; height: 17px; color: #06232a; }
-    .brand .name { font-weight: 700; font-size: 1.02rem; letter-spacing: -0.01em; }
+    .brand .mark { display: flex; align-items: center; justify-content: center; }
+    .brand .mark img { height: 30px; width: auto; display: block; }
+    .brand .name { font-weight: 700; font-size: 0.95rem; letter-spacing: -0.01em; }
     .nav-link {
         display: flex; align-items: center; gap: 13px;
         padding: 11px 13px; border-radius: 10px;
@@ -162,6 +163,16 @@
     .note-item.error { color: var(--tk-red); }
     .empty-mini { color: var(--muted); text-align: center; padding: 22px; font-size: 0.88rem; }
 
+    /* Media Library */
+    .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 16px; }
+    .media-card { border: 1px solid var(--card-border); border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.22); }
+    .media-thumb { aspect-ratio: 1 / 1; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .media-thumb img, .media-thumb video { width: 100%; height: 100%; object-fit: cover; }
+    .media-info { padding: 11px 12px; }
+    .media-name { font-size: 0.78rem; word-break: break-all; margin-bottom: 7px; line-height: 1.35; }
+    .media-acct { font-size: 0.76rem; color: var(--tk-cyan); margin-bottom: 3px; }
+    .media-time { font-size: 0.72rem; color: var(--muted); }
+
     /* Manage Accounts */
     .acct-row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--card-border); border-radius: 12px; margin-bottom: 10px; }
     .acct-av { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; }
@@ -181,9 +192,9 @@
     <aside class="sidebar">
         <div class="brand">
             <span class="mark">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                <img src="{% static 'wisoft-icon.png' %}" alt="Wisoft">
             </span>
-            <span class="name">TikTok Scheduler</span>
+            <span class="name">Wisoft TikTok Scheduler</span>
         </div>
 
         <a href="#overview" class="nav-link active">
@@ -196,19 +207,15 @@
         </a>
         <a href="#scheduled" class="nav-link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Scheduled Posts
+            Scheduled Posts History
         </a>
         <a href="#accounts" class="nav-link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             Manage Accounts
         </a>
-        <a href="#" class="nav-link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            Drafts <span class="soon">soon</span>
-        </a>
-        <a href="#" class="nav-link">
+        <a href="#media" class="nav-link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            Media Library <span class="soon">soon</span>
+            Media Library
         </a>
         <a href="#activity" class="nav-link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -275,23 +282,40 @@
         <!-- Manage Accounts -->
         <div class="card" id="accounts">
             <h2>Manage Accounts</h2>
-            {% if connected %}
+            {% if accounts %}
+            {% for acc in accounts %}
             <div class="acct-row">
-                {% if profile.avatar_url %}
-                <img class="acct-av" src="{{ profile.avatar_url }}" alt="avatar">
+                {% if acc.avatar_url %}
+                <img class="acct-av" src="{{ acc.avatar_url }}" alt="avatar">
                 {% else %}
                 <div class="acct-av placeholder">👤</div>
                 {% endif %}
                 <div>
-                    <div class="acct-name">{{ profile.display_name|default:"Connected account" }}</div>
+                    <div class="acct-name">{{ acc.display_name|default:"Account" }}</div>
                     <div class="acct-sub">
-                        {% if profile.username %}@{{ profile.username }}{% elif profile.open_id %}Open ID: {{ profile.open_id }}{% endif %}
+                        {% if acc.username %}@{{ acc.username }}{% elif acc.open_id %}Open ID: {{ acc.open_id }}{% endif %}
                     </div>
                 </div>
-                <span class="pill-ok">● Logged in</span>
+                <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+                    {% if acc.open_id == active_open_id %}
+                    <span style="color:#2bd576; font-size:0.8rem; font-weight:600; white-space:nowrap;">● Active</span>
+                    {% else %}
+                    <form method="post" action="{% url 'switch_account' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="open_id" value="{{ acc.open_id }}">
+                        <button type="submit" class="act-btn">Switch</button>
+                    </form>
+                    {% endif %}
+                    <form method="post" action="{% url 'remove_account' %}" onsubmit="return confirm('Remove this account?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="open_id" value="{{ acc.open_id }}">
+                        <button type="submit" class="act-btn danger">Remove</button>
+                    </form>
+                </div>
             </div>
+            {% endfor %}
             {% else %}
-            <div class="empty-mini">No account connected yet.</div>
+            <div class="empty-mini">No accounts connected yet.</div>
             {% endif %}
 
             <p class="acct-note">
@@ -392,16 +416,17 @@
 
         <!-- Scheduled Posts Table -->
         <div class="card" id="scheduled">
-            <h2>Scheduled Posts</h2>
+            <h2>Scheduled Posts History</h2>
             <div class="table-wrap">
                 <table class="posts">
-                    <thead><tr><th>Media</th><th>Caption</th><th>Schedule Time</th><th>Status</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Media</th><th>Caption</th><th>Date</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead>
                     <tbody>
                         {% for post in posts reversed %}
                         <tr>
                             <td style="max-width:150px; word-break:break-all; color:var(--muted);">{{ post.media_filename }}</td>
                             <td style="max-width:220px;">{{ post.caption|default:"—" }}</td>
-                            <td style="white-space:nowrap;">{{ post.schedule }}</td>
+                            <td style="white-space:nowrap;">{{ post.schedule_dt|date:"M j, Y"|default:post.schedule }}</td>
+                            <td style="white-space:nowrap;">{{ post.schedule_dt|time:"g:i A" }}</td>
                             <td><span class="status-badge st-{{ post.status }}">{{ post.status }}</span></td>
                             <td>
                                 <div style="display:flex; gap:6px;">
@@ -413,18 +438,49 @@
                             </td>
                         </tr>
                         {% empty %}
-                        <tr><td colspan="5" class="empty-mini">No posts scheduled yet.</td></tr>
+                        <tr><td colspan="6" class="empty-mini">No posts scheduled yet.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
 
+        <!-- Media Library -->
+        <div class="card" id="media">
+            <h2>Media Library (for all accounts)</h2>
+            {% if media_items %}
+            <div class="media-grid">
+                {% for m in media_items %}
+                <div class="media-card">
+                    <div class="media-thumb">
+                        {% if m.is_image %}
+                        <img src="{{ m.url }}" alt="{{ m.filename }}" loading="lazy">
+                        {% else %}
+                        <video src="{{ m.url }}" preload="metadata" muted></video>
+                        {% endif %}
+                    </div>
+                    <div class="media-info">
+                        <div class="media-name">{{ m.filename }}</div>
+                        <div class="media-acct">{{ m.account }}</div>
+                        <div class="media-time">{{ m.date|date:"M j, Y" }} · {{ m.date|time:"g:i A" }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-mini">No media uploaded yet.</div>
+            {% endif %}
+        </div>
+
         <!-- Recent Activity -->
         <div class="card" id="activity">
             <h2>Recent Activity</h2>
             {% for a in activity %}
-            <div class="feed-item"><span>{{ a.icon }}</span><span>{{ a.message }}</span><span class="fi-time">{{ a.time }}</span></div>
+            <div class="feed-item">
+                <span>{{ a.icon }}</span>
+                <span>{{ a.message }}{% if a.account %} <span style="color:var(--muted);">· {{ a.account }}</span>{% endif %}</span>
+                <span class="fi-time">{{ a.time }}</span>
+            </div>
             {% empty %}
             <div class="empty-mini">No activity yet.</div>
             {% endfor %}
@@ -438,7 +494,11 @@
                 <div class="field-row">
                     <div class="form-group">
                         <label>Timezone</label>
-                        <input type="text" name="timezone" value="{{ settings.timezone }}" placeholder="UTC">
+                        <select name="timezone">
+                            {% for tz in timezones %}
+                            <option value="{{ tz }}" {% if settings.timezone == tz %}selected{% endif %}>{{ tz }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>Default Privacy</label>
@@ -462,7 +522,7 @@
                 <label class="toggle" style="margin-bottom:18px;"><input type="checkbox" name="auto_refresh" {% if settings.auto_refresh %}checked{% endif %}> Auto refresh account info</label>
                 <div style="display:flex; gap:12px; flex-wrap:wrap;">
                     <button type="submit" class="btn-primary" style="padding:12px 24px;">Save Settings</button>
-                    <a href="{% url 'login' %}" class="btn-secondary">Reconnect TikTok</a>
+                    <button type="submit" formaction="{% url 'reset_settings' %}" class="btn-secondary" onclick="return confirm('Reset all settings to default?');">Reset to Default Settings</button>
                     <a href="{% url 'disconnect' %}" class="btn-secondary" style="color:var(--tk-red);">Disconnect</a>
                 </div>
             </form>
