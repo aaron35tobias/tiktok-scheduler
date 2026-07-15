@@ -208,3 +208,9 @@ class Storage:
         settings.update(new_settings)
         with open(config.SETTINGS_FILE, 'w') as f:
             json.dump(settings, f, indent=4)
+
+    @staticmethod
+    def reset_settings():
+        """Restore settings to defaults (blank email, Private, Asia/Dubai)."""
+        with open(config.SETTINGS_FILE, 'w') as f:
+            json.dump(dict(Storage.DEFAULT_SETTINGS), f, indent=4)

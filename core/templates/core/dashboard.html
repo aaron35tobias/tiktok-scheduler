@@ -485,7 +485,7 @@
                 <label class="toggle" style="margin-bottom:18px;"><input type="checkbox" name="auto_refresh" {% if settings.auto_refresh %}checked{% endif %}> Auto refresh account info</label>
                 <div style="display:flex; gap:12px; flex-wrap:wrap;">
                     <button type="submit" class="btn-primary" style="padding:12px 24px;">Save Settings</button>
-                    <a href="{% url 'login' %}" class="btn-secondary">Reconnect TikTok</a>
+                    <button type="submit" formaction="{% url 'reset_settings' %}" class="btn-secondary" onclick="return confirm('Reset all settings to default?');">Reset to Default Settings</button>
                     <a href="{% url 'disconnect' %}" class="btn-secondary" style="color:var(--tk-red);">Disconnect</a>
                 </div>
             </form>

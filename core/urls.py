@@ -13,4 +13,5 @@ urlpatterns = [
     path('accounts/remove/', views.remove_account, name='remove_account'),
     path('disconnect/', views.disconnect, name='disconnect'),
     path('settings/', views.save_settings, name='save_settings'),
+    path('settings/reset/', views.reset_settings, name='reset_settings'),
 ]

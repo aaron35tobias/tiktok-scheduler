@@ -370,3 +370,10 @@ def save_settings(request):
         })
         Storage.add_activity("⚙️", "Updated settings")
     return redirect('dashboard')
+
+
+def reset_settings(request):
+    if request.method == 'POST':
+        Storage.reset_settings()
+        Storage.add_activity("♻️", "Reset settings to default")
+    return redirect('dashboard')
