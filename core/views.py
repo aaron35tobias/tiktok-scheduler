@@ -131,6 +131,10 @@ def dashboard(request):
     token = Storage.load_tokens()
     profile = Storage.load_profile()
 
+    # Keep the active account present in the registry (so it always lists).
+    if token and profile and profile.open_id:
+        Storage.add_account(token, profile)
+
     last_connected = "Never"
     if token and os.path.exists(config.TOKENS_FILE):
         last_connected = datetime.fromtimestamp(
@@ -142,6 +146,8 @@ def dashboard(request):
         'profile': profile,
         'connected': bool(token and token.access_token),
         'last_connected': last_connected,
+        'accounts': Storage.list_accounts(),
+        'active_open_id': profile.open_id if profile else '',
         'stats': _build_stats(posts),
         'calendar': _build_calendar(posts),
         'activity': Storage.load_activity(),
@@ -211,7 +217,9 @@ def callback(request):
                 expires_at=time.time() + token_data.get("expires_in", 86400)
             )
             Storage.save_tokens(token)
-            _fetch_and_save_profile()
+            prof = _fetch_and_save_profile()
+            if prof:
+                Storage.add_account(token, prof)   # register for multi-account
             Storage.add_activity("🔗", "Connected TikTok account")
             return redirect('dashboard')
         else:
@@ -282,6 +290,23 @@ def refresh_account(request):
     profile = _fetch_and_save_profile()
     if profile:
         Storage.add_activity("🔄", "Refreshed account info")
+    return redirect('dashboard')
+
+
+def switch_account(request):
+    if request.method == 'POST':
+        open_id = request.POST.get('open_id')
+        if open_id and Storage.switch_account(open_id):
+            Storage.add_activity("🔀", "Switched active account")
+    return redirect('dashboard')
+
+
+def remove_account(request):
+    if request.method == 'POST':
+        open_id = request.POST.get('open_id')
+        if open_id:
+            Storage.remove_account(open_id)
+            Storage.add_activity("🗑️", "Removed a connected account")
     return redirect('dashboard')
 
 

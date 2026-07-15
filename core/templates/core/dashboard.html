@@ -275,23 +275,40 @@
         <!-- Manage Accounts -->
         <div class="card" id="accounts">
             <h2>Manage Accounts</h2>
-            {% if connected %}
+            {% if accounts %}
+            {% for acc in accounts %}
             <div class="acct-row">
-                {% if profile.avatar_url %}
-                <img class="acct-av" src="{{ profile.avatar_url }}" alt="avatar">
+                {% if acc.avatar_url %}
+                <img class="acct-av" src="{{ acc.avatar_url }}" alt="avatar">
                 {% else %}
                 <div class="acct-av placeholder">👤</div>
                 {% endif %}
                 <div>
-                    <div class="acct-name">{{ profile.display_name|default:"Connected account" }}</div>
+                    <div class="acct-name">{{ acc.display_name|default:"Account" }}</div>
                     <div class="acct-sub">
-                        {% if profile.username %}@{{ profile.username }}{% elif profile.open_id %}Open ID: {{ profile.open_id }}{% endif %}
+                        {% if acc.username %}@{{ acc.username }}{% elif acc.open_id %}Open ID: {{ acc.open_id }}{% endif %}
                     </div>
                 </div>
-                <span class="pill-ok">● Logged in</span>
+                <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+                    {% if acc.open_id == active_open_id %}
+                    <span style="color:#2bd576; font-size:0.8rem; font-weight:600; white-space:nowrap;">● Active</span>
+                    {% else %}
+                    <form method="post" action="{% url 'switch_account' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="open_id" value="{{ acc.open_id }}">
+                        <button type="submit" class="act-btn">Switch</button>
+                    </form>
+                    {% endif %}
+                    <form method="post" action="{% url 'remove_account' %}" onsubmit="return confirm('Remove this account?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="open_id" value="{{ acc.open_id }}">
+                        <button type="submit" class="act-btn danger">Remove</button>
+                    </form>
+                </div>
             </div>
+            {% endfor %}
             {% else %}
-            <div class="empty-mini">No account connected yet.</div>
+            <div class="empty-mini">No accounts connected yet.</div>
             {% endif %}
 
             <p class="acct-note">
