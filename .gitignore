@@ -20,3 +20,7 @@ dump.rdb
 *.mp4
 *.png
 *.jpg
+
+# ...but keep brand/static assets
+!static/*.png
+!static/*.svg
