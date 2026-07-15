@@ -1,4 +1,5 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block extra_head %}
 <style>
@@ -28,9 +29,9 @@
         z-index: 20;
     }
     .brand { display: flex; align-items: center; gap: 11px; padding: 6px 10px 26px; }
-    .brand .mark { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--tk-cyan), #3fa9b3); display: flex; align-items: center; justify-content: center; }
-    .brand .mark svg { width: 17px; height: 17px; color: #06232a; }
-    .brand .name { font-weight: 700; font-size: 1.02rem; letter-spacing: -0.01em; }
+    .brand .mark { display: flex; align-items: center; justify-content: center; }
+    .brand .mark img { height: 30px; width: auto; display: block; }
+    .brand .name { font-weight: 700; font-size: 0.95rem; letter-spacing: -0.01em; }
     .nav-link {
         display: flex; align-items: center; gap: 13px;
         padding: 11px 13px; border-radius: 10px;
@@ -181,9 +182,9 @@
     <aside class="sidebar">
         <div class="brand">
             <span class="mark">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+                <img src="{% static 'wisoft-icon.png' %}" alt="Wisoft">
             </span>
-            <span class="name">TikTok Scheduler</span>
+            <span class="name">Wisoft TikTok Scheduler</span>
         </div>
 
         <a href="#overview" class="nav-link active">
