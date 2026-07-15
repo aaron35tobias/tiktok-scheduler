@@ -7,6 +7,7 @@ import calendar as pycal
 import logging
 import uuid
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import requests
 from django.utils import timezone
@@ -22,6 +23,16 @@ from tiktok_scheduler.api import api_client
 from .tasks import upload_post_task
 
 logger = logging.getLogger(__name__)
+
+# Common timezones offered in the Settings dropdown.
+COMMON_TIMEZONES = [
+    "UTC",
+    "Asia/Dubai", "Asia/Kolkata", "Asia/Karachi", "Asia/Riyadh",
+    "Asia/Singapore", "Asia/Tokyo", "Asia/Shanghai",
+    "Europe/London", "Europe/Paris", "Europe/Berlin", "Europe/Istanbul",
+    "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
+    "America/Sao_Paulo", "Australia/Sydney", "Pacific/Auckland",
+]
 
 
 # ---------------------------------------------------------------------------
@@ -162,6 +173,12 @@ def dashboard(request):
         'notifications': _build_notifications(posts, token),
         'settings': Storage.load_settings(),
     }
+    # Timezone dropdown options (ensure the saved one is always present).
+    tz_list = list(COMMON_TIMEZONES)
+    current_tz = context['settings'].get('timezone')
+    if current_tz and current_tz not in tz_list:
+        tz_list.insert(0, current_tz)
+    context['timezones'] = tz_list
     return render(request, 'core/dashboard.html', context)
 
 
@@ -258,9 +275,14 @@ def schedule_post(request):
     filename = fs.save(media_file.name, media_file)
     media_absolute_path = fs.path(filename)
 
+    # Interpret the entered time in the user's chosen timezone (Settings).
+    tz_name = Storage.load_settings().get('timezone') or 'Asia/Dubai'
     try:
-        run_date = datetime.fromisoformat(schedule_time_str)
-        run_date = timezone.make_aware(run_date)
+        tzinfo = ZoneInfo(tz_name)
+    except Exception:
+        tzinfo = ZoneInfo('Asia/Dubai')
+    try:
+        run_date = datetime.fromisoformat(schedule_time_str).replace(tzinfo=tzinfo)
     except ValueError:
         return JsonResponse({'error': 'Invalid schedule format. Use ISO format.'}, status=400)
 
