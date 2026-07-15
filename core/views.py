@@ -136,16 +136,9 @@ def dashboard(request):
     if token and profile and profile.open_id:
         Storage.add_account(token, profile)
 
-    # Scope posts to the active account. Legacy posts with no owner are
-    # migrated to the current active account once.
+    # Scope posts to the active account (each post is tagged with its owner
+    # when scheduled). Posts with no owner aren't shown under any account.
     if active_oid:
-        migrated = False
-        for p in all_posts:
-            if not p.account_open_id:
-                p.account_open_id = active_oid
-                migrated = True
-        if migrated:
-            Storage.save_schedule(all_posts)
         posts = [p for p in all_posts if p.account_open_id == active_oid]
     else:
         posts = all_posts
