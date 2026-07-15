@@ -168,6 +168,29 @@ def dashboard(request):
         except Exception:
             pass
 
+    # Media Library: every uploaded media file with the account it was posted
+    # with, and its date/time (shown across all accounts).
+    acct_by_oid = {a.open_id: a for a in Storage.list_accounts()}
+    media_items = []
+    for p in reversed(all_posts):
+        if not p.media:
+            continue
+        acc = acct_by_oid.get(p.account_open_id)
+        if acc:
+            acc_label = ("@" + acc.username) if acc.username else (acc.display_name or "Unknown")
+        else:
+            acc_label = "Unknown"
+        fname = p.media_filename
+        ext = fname.rsplit('.', 1)[-1].lower() if '.' in fname else ''
+        media_items.append({
+            'filename': fname,
+            'url': '/media/' + fname,
+            'is_image': ext in ('jpg', 'jpeg', 'png', 'gif', 'webp'),
+            'account': acc_label,
+            'date': p.schedule_dt,
+            'status': p.status,
+        })
+
     context = {
         'posts': posts,
         'profile': profile,
@@ -178,6 +201,7 @@ def dashboard(request):
         'stats': _build_stats(posts),
         'calendar': _build_calendar(posts),
         'activity': activity,
+        'media_items': media_items,
         'notifications': _build_notifications(posts, token),
         'settings': Storage.load_settings(),
     }

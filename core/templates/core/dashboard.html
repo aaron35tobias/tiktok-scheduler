@@ -163,6 +163,16 @@
     .note-item.error { color: var(--tk-red); }
     .empty-mini { color: var(--muted); text-align: center; padding: 22px; font-size: 0.88rem; }
 
+    /* Media Library */
+    .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 16px; }
+    .media-card { border: 1px solid var(--card-border); border-radius: 12px; overflow: hidden; background: rgba(0,0,0,0.22); }
+    .media-thumb { aspect-ratio: 1 / 1; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .media-thumb img, .media-thumb video { width: 100%; height: 100%; object-fit: cover; }
+    .media-info { padding: 11px 12px; }
+    .media-name { font-size: 0.78rem; word-break: break-all; margin-bottom: 7px; line-height: 1.35; }
+    .media-acct { font-size: 0.76rem; color: var(--tk-cyan); margin-bottom: 3px; }
+    .media-time { font-size: 0.72rem; color: var(--muted); }
+
     /* Manage Accounts */
     .acct-row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--card-border); border-radius: 12px; margin-bottom: 10px; }
     .acct-av { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; }
@@ -203,9 +213,9 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             Manage Accounts
         </a>
-        <a href="#" class="nav-link">
+        <a href="#media" class="nav-link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            Media Library <span class="soon">soon</span>
+            Media Library
         </a>
         <a href="#activity" class="nav-link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -433,6 +443,33 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        <!-- Media Library -->
+        <div class="card" id="media">
+            <h2>Media Library</h2>
+            {% if media_items %}
+            <div class="media-grid">
+                {% for m in media_items %}
+                <div class="media-card">
+                    <div class="media-thumb">
+                        {% if m.is_image %}
+                        <img src="{{ m.url }}" alt="{{ m.filename }}" loading="lazy">
+                        {% else %}
+                        <video src="{{ m.url }}" preload="metadata" muted></video>
+                        {% endif %}
+                    </div>
+                    <div class="media-info">
+                        <div class="media-name">{{ m.filename }}</div>
+                        <div class="media-acct">{{ m.account }}</div>
+                        <div class="media-time">{{ m.date|date:"M j, Y" }} · {{ m.date|time:"g:i A" }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-mini">No media uploaded yet.</div>
+            {% endif %}
         </div>
 
         <!-- Recent Activity -->
