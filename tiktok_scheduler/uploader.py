@@ -13,7 +13,8 @@ class TikTokUploader:
                      disable_comment: bool = False,
                      disable_duet: bool = False,
                      disable_stitch: bool = False,
-                     access_token: str = None) -> str:
+                     access_token: str = None,
+                     cover_timestamp_ms: int = 0) -> str:
         """
         Initializes and uploads media to TikTok APIs.
         Returns the publish_id.
@@ -86,6 +87,7 @@ class TikTokUploader:
                     "disable_comment": disable_comment,
                     "disable_duet": disable_duet,
                     "disable_stitch": disable_stitch,
+                    "video_cover_timestamp_ms": cover_timestamp_ms,
                 }
             }
             

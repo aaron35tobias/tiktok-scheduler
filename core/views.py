@@ -299,6 +299,11 @@ def schedule_post(request):
     allow_comments = request.POST.get('allow_comments') == 'on'
     allow_duet = request.POST.get('allow_duet') == 'on'
     allow_stitch = request.POST.get('allow_stitch') == 'on'
+    aspect_ratio = request.POST.get('aspect_ratio', 'original')
+    try:
+        cover_timestamp_ms = int(request.POST.get('cover_timestamp_ms') or 0)
+    except ValueError:
+        cover_timestamp_ms = 0
 
     if not all([media_file, schedule_time_str]):
         return JsonResponse({'error': 'Missing required fields (file or schedule time)'}, status=400)
@@ -332,6 +337,8 @@ def schedule_post(request):
         allow_duet=allow_duet,
         allow_stitch=allow_stitch,
         account_open_id=owner_open_id,
+        aspect_ratio=aspect_ratio,
+        cover_timestamp_ms=cover_timestamp_ms,
     )
 
     posts = Storage.load_schedule()
@@ -346,9 +353,16 @@ def schedule_post(request):
 
 def delete_post(request, post_id):
     if request.method == 'POST':
+        # Look up the post first so we can also clean up its uploaded file.
+        target = next((p for p in Storage.load_schedule() if p.id == post_id), None)
         deleted = Storage.delete_post(post_id)
         if deleted:
-            Storage.add_activity("🗑️", "Deleted a scheduled post")
+            if target and target.media and os.path.exists(target.media):
+                try:
+                    os.remove(target.media)
+                except OSError:
+                    pass
+            Storage.add_activity("🗑️", "Deleted a post")
     return redirect('dashboard')
 
 

@@ -80,6 +80,8 @@ class Post:
     allow_duet: bool = True
     allow_stitch: bool = True
     account_open_id: str = ""           # which connected account this post belongs to
+    aspect_ratio: str = "original"      # original, 9:16, 1:1, 16:9
+    cover_timestamp_ms: int = 0         # video frame (ms) to use as the cover/thumbnail
 
     @property
     def media_filename(self) -> str:
@@ -122,6 +124,8 @@ class Post:
             "allow_duet": self.allow_duet,
             "allow_stitch": self.allow_stitch,
             "account_open_id": self.account_open_id,
+            "aspect_ratio": self.aspect_ratio,
+            "cover_timestamp_ms": self.cover_timestamp_ms,
         }
 
     @classmethod
@@ -140,4 +144,6 @@ class Post:
             allow_duet=data.get("allow_duet", True),
             allow_stitch=data.get("allow_stitch", True),
             account_open_id=data.get("account_open_id", ""),
+            aspect_ratio=data.get("aspect_ratio", "original"),
+            cover_timestamp_ms=data.get("cover_timestamp_ms", 0),
         )

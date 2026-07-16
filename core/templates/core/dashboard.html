@@ -117,6 +117,25 @@
     .toggles { display: flex; gap: 18px; flex-wrap: wrap; padding-top: 8px; }
     .toggle { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 0.88rem; cursor: pointer; }
     .toggle input { width: 15px; height: 15px; accent-color: var(--tk-cyan); }
+    .hint { font-size: 0.78rem; color: var(--muted); margin-top: 7px; line-height: 1.5; }
+
+    /* Aspect-ratio tiles — phone mockups */
+    .ar-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .ar-radio { position: absolute; opacity: 0; pointer-events: none; }
+    .ar-tile { display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 13px 6px; border: 1px solid var(--card-border); border-radius: 10px; cursor: pointer; background: rgba(0,0,0,0.15); transition: border-color 0.15s, background 0.15s; }
+    .ar-tile:hover { border-color: var(--muted); }
+    .phone { width: 46px; height: 82px; border: 2px solid var(--muted); border-radius: 10px; padding: 5px 4px; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s; }
+    .screen { width: 100%; height: 100%; background: #000; border-radius: 3px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .vid { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.52rem; font-weight: 800; background: linear-gradient(135deg, #8aa0ff, #c3ccff); }
+    .v-916 { width: 100%; height: 100%; }
+    .v-11 { width: 100%; aspect-ratio: 1 / 1; }
+    .v-169 { width: 100%; aspect-ratio: 16 / 9; }
+    .v-orig { width: 100%; height: 100%; background: repeating-linear-gradient(45deg, #6f7dbf, #6f7dbf 5px, #93a5ff 5px, #93a5ff 10px); }
+    .ar-label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+    .ar-radio:checked + .ar-tile { border-color: var(--tk-cyan); background: rgba(105,201,208,0.1); }
+    .ar-radio:checked + .ar-tile .phone { border-color: var(--tk-cyan); }
+    .ar-radio:checked + .ar-tile .ar-label { color: var(--tk-cyan); }
+    .ar-radio:focus-visible + .ar-tile { outline: 2px solid var(--tk-cyan); outline-offset: 2px; }
 
     .file-drop-area {
         position: relative; display: flex; align-items: center; justify-content: center; flex-direction: column;
@@ -128,6 +147,7 @@
     .file-msg { font-size: 0.88rem; color: var(--muted); margin-top: 9px; }
     #media-preview { margin-top: 14px; display: none; }
     #media-preview img, #media-preview video { max-width: 100%; max-height: 200px; border-radius: 10px; }
+    .thumb-slider { width: 100%; accent-color: var(--tk-cyan); cursor: pointer; height: 22px; }
 
     .btn-primary { font-size: 0.98rem; }
 
@@ -352,6 +372,14 @@
                         </div>
                         <div id="media-preview"></div>
                     </div>
+
+                    <div class="form-group" id="thumb-control" style="display:none;">
+                        <label>Thumbnail (cover frame)</label>
+                        <input type="range" id="thumb-range" min="0" max="0" step="0.1" value="0" class="thumb-slider">
+                        <input type="hidden" name="cover_timestamp_ms" id="cover-ms" value="0">
+                        <div class="hint">Drag to pick which frame of the video becomes the cover — <span id="thumb-time">0.0s</span>.</div>
+                    </div>
+
                     <div class="form-group">
                         <label>Caption</label>
                         <textarea name="caption" placeholder="Write your caption…" required></textarea>
@@ -378,11 +406,42 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="form-group">
+                        <label>Aspect Ratio</label>
+                        <div class="ar-tiles">
+                            <input class="ar-radio" type="radio" name="aspect_ratio" id="ar-original" value="original" checked>
+                            <label for="ar-original" class="ar-tile">
+                                <span class="phone"><span class="screen"><span class="vid v-orig">AUTO</span></span></span>
+                                <span class="ar-label">Original</span>
+                            </label>
+                            <input class="ar-radio" type="radio" name="aspect_ratio" id="ar-916" value="9:16">
+                            <label for="ar-916" class="ar-tile">
+                                <span class="phone"><span class="screen"><span class="vid v-916">9:16</span></span></span>
+                                <span class="ar-label">9:16</span>
+                            </label>
+                            <input class="ar-radio" type="radio" name="aspect_ratio" id="ar-11" value="1:1">
+                            <label for="ar-11" class="ar-tile">
+                                <span class="phone"><span class="screen"><span class="vid v-11">1:1</span></span></span>
+                                <span class="ar-label">1:1</span>
+                            </label>
+                            <input class="ar-radio" type="radio" name="aspect_ratio" id="ar-169" value="16:9">
+                            <label for="ar-169" class="ar-tile">
+                                <span class="phone"><span class="screen"><span class="vid v-169">16:9</span></span></span>
+                                <span class="ar-label">16:9</span>
+                            </label>
+                        </div>
+                        <div class="hint">The video is re-encoded to this ratio before posting, so it shows in that format on TikTok. Videos only.</div>
+                    </div>
+
                     <div class="form-group">
                         <label>Schedule Date &amp; Time ({{ settings.timezone }})</label>
                         <input type="datetime-local" name="schedule" required>
                     </div>
-                    <button type="submit" class="btn-primary" style="width: 100%;">Schedule Post</button>
+                    <div style="display:flex; gap:12px;">
+                        <button type="submit" class="btn-primary" style="flex:1;">Schedule Post</button>
+                        <button type="button" class="btn-secondary" id="discard-btn">Discard</button>
+                    </div>
                     {% if not connected %}
                     <p style="color:#ffb020; font-size:0.8rem; margin-top:10px;">Not connected — posts queue but won't publish until you connect TikTok.</p>
                     {% endif %}
@@ -537,6 +596,11 @@
     const dropArea = document.getElementById('drop-area');
     const preview = document.getElementById('media-preview');
 
+    const thumbControl = document.getElementById('thumb-control');
+    const thumbRange = document.getElementById('thumb-range');
+    const coverMs = document.getElementById('cover-ms');
+    const thumbTime = document.getElementById('thumb-time');
+
     function showPreview() {
         if (!fileInput.files.length) return;
         const file = fileInput.files[0];
@@ -544,11 +608,47 @@
         fileMsg.style.color = "var(--tk-cyan)";
         const url = URL.createObjectURL(file);
         preview.style.display = 'block';
-        preview.innerHTML = file.type.startsWith('video')
-            ? '<video src="' + url + '" controls muted></video>'
-            : '<img src="' + url + '" alt="preview">';
+
+        // reset thumbnail control
+        thumbControl.style.display = 'none';
+        coverMs.value = '0';
+
+        if (file.type.startsWith('video')) {
+            preview.innerHTML = '<video id="preview-video" src="' + url + '" controls muted></video>';
+            const vid = document.getElementById('preview-video');
+            vid.addEventListener('loadedmetadata', function () {
+                thumbRange.max = vid.duration.toFixed(1);
+                thumbRange.value = 0;
+                thumbTime.textContent = '0.0s';
+                thumbControl.style.display = 'block';
+            });
+            thumbRange.oninput = function () {
+                const t = parseFloat(thumbRange.value);
+                vid.currentTime = t;                 // seek preview to that frame
+                coverMs.value = Math.round(t * 1000);
+                thumbTime.textContent = t.toFixed(1) + 's';
+            };
+        } else {
+            preview.innerHTML = '<img src="' + url + '" alt="preview">';
+        }
     }
     fileInput.addEventListener('change', showPreview);
+
+    // Discard: clear the in-progress post (file, preview, fields).
+    const discardBtn = document.getElementById('discard-btn');
+    if (discardBtn) {
+        discardBtn.addEventListener('click', function () {
+            if (!confirm('Discard this post? Your uploaded file and inputs will be cleared.')) return;
+            const form = fileInput.closest('form');
+            form.reset();
+            preview.style.display = 'none';
+            preview.innerHTML = '';
+            thumbControl.style.display = 'none';
+            coverMs.value = '0';
+            fileMsg.textContent = 'Choose File — or Drag & Drop';
+            fileMsg.style.color = 'var(--muted)';
+        });
+    }
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev =>
         dropArea.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }, false));

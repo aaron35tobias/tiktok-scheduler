@@ -31,14 +31,25 @@ def upload_post_task(post_id):
             if owner_token:
                 access_token = owner_token.access_token
 
+        # If an aspect ratio was chosen, re-encode the video so TikTok shows it
+        # in that format (TikTok reads the video's real dimensions).
+        media_path = post.media
+        if getattr(post, "aspect_ratio", "original") in ("9:16", "1:1", "16:9"):
+            import mimetypes
+            mime, _ = mimetypes.guess_type(post.media)
+            if mime and mime.startswith("video/"):
+                from tiktok_scheduler.video import transform_aspect_ratio
+                media_path = transform_aspect_ratio(post.media, post.aspect_ratio)
+
         publish_id = uploader.upload_media(
-            post.media,
+            media_path,
             post.full_caption,
             privacy_level=post.privacy or "SELF_ONLY",
             disable_comment=not post.allow_comments,
             disable_duet=not post.allow_duet,
             disable_stitch=not post.allow_stitch,
             access_token=access_token,
+            cover_timestamp_ms=getattr(post, "cover_timestamp_ms", 0),
         )
         
         post.publish_id = publish_id

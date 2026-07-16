@@ -5,3 +5,4 @@ Django>=5.0.0
 celery>=5.3.6
 django-celery-results>=2.5.1
 redis<5.0.0
+imageio-ffmpeg>=0.4.9
