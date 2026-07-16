@@ -82,6 +82,7 @@ class Post:
     account_open_id: str = ""           # which connected account this post belongs to
     music_copyright_check: bool = False
     content_check_lite: bool = False
+    aspect_ratio: str = "original"      # original, 9:16, 1:1, 16:9
 
     @property
     def media_filename(self) -> str:
@@ -126,6 +127,7 @@ class Post:
             "account_open_id": self.account_open_id,
             "music_copyright_check": self.music_copyright_check,
             "content_check_lite": self.content_check_lite,
+            "aspect_ratio": self.aspect_ratio,
         }
 
     @classmethod
@@ -146,4 +148,5 @@ class Post:
             account_open_id=data.get("account_open_id", ""),
             music_copyright_check=data.get("music_copyright_check", False),
             content_check_lite=data.get("content_check_lite", False),
+            aspect_ratio=data.get("aspect_ratio", "original"),
         )

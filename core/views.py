@@ -301,6 +301,7 @@ def schedule_post(request):
     allow_stitch = request.POST.get('allow_stitch') == 'on'
     music_copyright_check = request.POST.get('music_copyright_check') == 'on'
     content_check_lite = request.POST.get('content_check_lite') == 'on'
+    aspect_ratio = request.POST.get('aspect_ratio', 'original')
 
     if not all([media_file, schedule_time_str]):
         return JsonResponse({'error': 'Missing required fields (file or schedule time)'}, status=400)
@@ -336,6 +337,7 @@ def schedule_post(request):
         account_open_id=owner_open_id,
         music_copyright_check=music_copyright_check,
         content_check_lite=content_check_lite,
+        aspect_ratio=aspect_ratio,
     )
 
     posts = Storage.load_schedule()
