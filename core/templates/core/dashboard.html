@@ -438,7 +438,10 @@
                         <label>Schedule Date &amp; Time ({{ settings.timezone }})</label>
                         <input type="datetime-local" name="schedule" required>
                     </div>
-                    <button type="submit" class="btn-primary" style="width: 100%;">Schedule Post</button>
+                    <div style="display:flex; gap:12px;">
+                        <button type="submit" class="btn-primary" style="flex:1;">Schedule Post</button>
+                        <button type="button" class="btn-secondary" id="discard-btn">Discard</button>
+                    </div>
                     {% if not connected %}
                     <p style="color:#ffb020; font-size:0.8rem; margin-top:10px;">Not connected — posts queue but won't publish until you connect TikTok.</p>
                     {% endif %}
@@ -630,6 +633,22 @@
         }
     }
     fileInput.addEventListener('change', showPreview);
+
+    // Discard: clear the in-progress post (file, preview, fields).
+    const discardBtn = document.getElementById('discard-btn');
+    if (discardBtn) {
+        discardBtn.addEventListener('click', function () {
+            if (!confirm('Discard this post? Your uploaded file and inputs will be cleared.')) return;
+            const form = fileInput.closest('form');
+            form.reset();
+            preview.style.display = 'none';
+            preview.innerHTML = '';
+            thumbControl.style.display = 'none';
+            coverMs.value = '0';
+            fileMsg.textContent = 'Choose File — or Drag & Drop';
+            fileMsg.style.color = 'var(--muted)';
+        });
+    }
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev =>
         dropArea.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); }, false));
