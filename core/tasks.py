@@ -49,6 +49,7 @@ def upload_post_task(post_id):
             disable_duet=not post.allow_duet,
             disable_stitch=not post.allow_stitch,
             access_token=access_token,
+            cover_timestamp_ms=getattr(post, "cover_timestamp_ms", 0),
         )
         
         post.publish_id = publish_id

@@ -300,6 +300,10 @@ def schedule_post(request):
     allow_duet = request.POST.get('allow_duet') == 'on'
     allow_stitch = request.POST.get('allow_stitch') == 'on'
     aspect_ratio = request.POST.get('aspect_ratio', 'original')
+    try:
+        cover_timestamp_ms = int(request.POST.get('cover_timestamp_ms') or 0)
+    except ValueError:
+        cover_timestamp_ms = 0
 
     if not all([media_file, schedule_time_str]):
         return JsonResponse({'error': 'Missing required fields (file or schedule time)'}, status=400)
@@ -334,6 +338,7 @@ def schedule_post(request):
         allow_stitch=allow_stitch,
         account_open_id=owner_open_id,
         aspect_ratio=aspect_ratio,
+        cover_timestamp_ms=cover_timestamp_ms,
     )
 
     posts = Storage.load_schedule()

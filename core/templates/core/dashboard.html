@@ -147,6 +147,7 @@
     .file-msg { font-size: 0.88rem; color: var(--muted); margin-top: 9px; }
     #media-preview { margin-top: 14px; display: none; }
     #media-preview img, #media-preview video { max-width: 100%; max-height: 200px; border-radius: 10px; }
+    .thumb-slider { width: 100%; accent-color: var(--tk-cyan); cursor: pointer; height: 22px; }
 
     .btn-primary { font-size: 0.98rem; }
 
@@ -371,6 +372,14 @@
                         </div>
                         <div id="media-preview"></div>
                     </div>
+
+                    <div class="form-group" id="thumb-control" style="display:none;">
+                        <label>Thumbnail (cover frame)</label>
+                        <input type="range" id="thumb-range" min="0" max="0" step="0.1" value="0" class="thumb-slider">
+                        <input type="hidden" name="cover_timestamp_ms" id="cover-ms" value="0">
+                        <div class="hint">Drag to pick which frame of the video becomes the cover — <span id="thumb-time">0.0s</span>.</div>
+                    </div>
+
                     <div class="form-group">
                         <label>Caption</label>
                         <textarea name="caption" placeholder="Write your caption…" required></textarea>
@@ -584,6 +593,11 @@
     const dropArea = document.getElementById('drop-area');
     const preview = document.getElementById('media-preview');
 
+    const thumbControl = document.getElementById('thumb-control');
+    const thumbRange = document.getElementById('thumb-range');
+    const coverMs = document.getElementById('cover-ms');
+    const thumbTime = document.getElementById('thumb-time');
+
     function showPreview() {
         if (!fileInput.files.length) return;
         const file = fileInput.files[0];
@@ -591,9 +605,29 @@
         fileMsg.style.color = "var(--tk-cyan)";
         const url = URL.createObjectURL(file);
         preview.style.display = 'block';
-        preview.innerHTML = file.type.startsWith('video')
-            ? '<video src="' + url + '" controls muted></video>'
-            : '<img src="' + url + '" alt="preview">';
+
+        // reset thumbnail control
+        thumbControl.style.display = 'none';
+        coverMs.value = '0';
+
+        if (file.type.startsWith('video')) {
+            preview.innerHTML = '<video id="preview-video" src="' + url + '" controls muted></video>';
+            const vid = document.getElementById('preview-video');
+            vid.addEventListener('loadedmetadata', function () {
+                thumbRange.max = vid.duration.toFixed(1);
+                thumbRange.value = 0;
+                thumbTime.textContent = '0.0s';
+                thumbControl.style.display = 'block';
+            });
+            thumbRange.oninput = function () {
+                const t = parseFloat(thumbRange.value);
+                vid.currentTime = t;                 // seek preview to that frame
+                coverMs.value = Math.round(t * 1000);
+                thumbTime.textContent = t.toFixed(1) + 's';
+            };
+        } else {
+            preview.innerHTML = '<img src="' + url + '" alt="preview">';
+        }
     }
     fileInput.addEventListener('change', showPreview);
 
