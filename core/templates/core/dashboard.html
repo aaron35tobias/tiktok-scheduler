@@ -119,30 +119,21 @@
     .toggle input { width: 15px; height: 15px; accent-color: var(--tk-cyan); }
     .hint { font-size: 0.78rem; color: var(--muted); margin-top: 7px; line-height: 1.5; }
 
-    /* Checks block + toggle switches */
-    .checks-box { display: flex; flex-direction: column; gap: 14px; border: 1px solid var(--card-border); border-radius: 10px; padding: 14px 16px; background: rgba(0,0,0,0.15); }
-    .check-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; }
-    .check-text b { font-size: 0.9rem; font-weight: 600; display: block; color: var(--text-primary); }
-    .check-text small { color: var(--muted); font-size: 0.77rem; }
-    .switch { appearance: none; -webkit-appearance: none; width: 40px; height: 22px; border-radius: 999px; background: #3a3f4b; position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; margin: 0; }
-    .switch::before { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
-    .switch:checked { background: var(--tk-cyan); }
-    .switch:checked::before { transform: translateX(18px); }
-
-    /* Aspect-ratio tiles */
+    /* Aspect-ratio tiles — phone mockups */
     .ar-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
     .ar-radio { position: absolute; opacity: 0; pointer-events: none; }
-    .ar-tile { display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 14px 8px; border: 1px solid var(--card-border); border-radius: 10px; cursor: pointer; background: rgba(0,0,0,0.15); transition: border-color 0.15s, background 0.15s; }
+    .ar-tile { display: flex; flex-direction: column; align-items: center; gap: 9px; padding: 13px 6px; border: 1px solid var(--card-border); border-radius: 10px; cursor: pointer; background: rgba(0,0,0,0.15); transition: border-color 0.15s, background 0.15s; }
     .ar-tile:hover { border-color: var(--muted); }
-    .ar-icon { height: 40px; display: flex; align-items: center; justify-content: center; }
-    .ar-shape { background: rgba(255,255,255,0.12); border: 1.5px solid var(--muted); border-radius: 3px; transition: border-color 0.15s, background 0.15s; }
-    .s-orig { width: 26px; height: 34px; border-style: dashed; }
-    .s-916 { width: 22px; height: 38px; }
-    .s-11 { width: 32px; height: 32px; }
-    .s-169 { width: 40px; height: 23px; }
-    .ar-label { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+    .phone { width: 46px; height: 82px; border: 2px solid var(--muted); border-radius: 10px; padding: 5px 4px; display: flex; align-items: center; justify-content: center; transition: border-color 0.15s; }
+    .screen { width: 100%; height: 100%; background: #000; border-radius: 3px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .vid { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.52rem; font-weight: 800; background: linear-gradient(135deg, #8aa0ff, #c3ccff); }
+    .v-916 { width: 100%; height: 100%; }
+    .v-11 { width: 100%; aspect-ratio: 1 / 1; }
+    .v-169 { width: 100%; aspect-ratio: 16 / 9; }
+    .v-orig { width: 100%; height: 100%; background: repeating-linear-gradient(45deg, #6f7dbf, #6f7dbf 5px, #93a5ff 5px, #93a5ff 10px); }
+    .ar-label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
     .ar-radio:checked + .ar-tile { border-color: var(--tk-cyan); background: rgba(105,201,208,0.1); }
-    .ar-radio:checked + .ar-tile .ar-shape { border-color: var(--tk-cyan); background: rgba(105,201,208,0.22); }
+    .ar-radio:checked + .ar-tile .phone { border-color: var(--tk-cyan); }
     .ar-radio:checked + .ar-tile .ar-label { color: var(--tk-cyan); }
     .ar-radio:focus-visible + .ar-tile { outline: 2px solid var(--tk-cyan); outline-offset: 2px; }
 
@@ -412,41 +403,26 @@
                         <div class="ar-tiles">
                             <input class="ar-radio" type="radio" name="aspect_ratio" id="ar-original" value="original" checked>
                             <label for="ar-original" class="ar-tile">
-                                <span class="ar-icon"><span class="ar-shape s-orig"></span></span>
+                                <span class="phone"><span class="screen"><span class="vid v-orig">AUTO</span></span></span>
                                 <span class="ar-label">Original</span>
                             </label>
                             <input class="ar-radio" type="radio" name="aspect_ratio" id="ar-916" value="9:16">
                             <label for="ar-916" class="ar-tile">
-                                <span class="ar-icon"><span class="ar-shape s-916"></span></span>
+                                <span class="phone"><span class="screen"><span class="vid v-916">9:16</span></span></span>
                                 <span class="ar-label">9:16</span>
                             </label>
                             <input class="ar-radio" type="radio" name="aspect_ratio" id="ar-11" value="1:1">
                             <label for="ar-11" class="ar-tile">
-                                <span class="ar-icon"><span class="ar-shape s-11"></span></span>
+                                <span class="phone"><span class="screen"><span class="vid v-11">1:1</span></span></span>
                                 <span class="ar-label">1:1</span>
                             </label>
                             <input class="ar-radio" type="radio" name="aspect_ratio" id="ar-169" value="16:9">
                             <label for="ar-169" class="ar-tile">
-                                <span class="ar-icon"><span class="ar-shape s-169"></span></span>
+                                <span class="phone"><span class="screen"><span class="vid v-169">16:9</span></span></span>
                                 <span class="ar-label">16:9</span>
                             </label>
                         </div>
                         <div class="hint">The video is re-encoded to this ratio before posting, so it shows in that format on TikTok. Videos only.</div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Checks</label>
-                        <div class="checks-box">
-                            <label class="check-row">
-                                <span class="check-text"><b>Music copyright check</b><small>Flags copyrighted music so it isn't muted or blocked.</small></span>
-                                <input type="checkbox" name="music_copyright_check" class="switch">
-                            </label>
-                            <label class="check-row">
-                                <span class="check-text"><b>Content check lite</b><small>A lighter pre-check of your content before publishing.</small></span>
-                                <input type="checkbox" name="content_check_lite" class="switch">
-                            </label>
-                        </div>
-                        <div class="hint">TikTok also runs its own copyright &amp; content checks automatically when the post publishes.</div>
                     </div>
 
                     <div class="form-group">

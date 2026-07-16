@@ -299,8 +299,6 @@ def schedule_post(request):
     allow_comments = request.POST.get('allow_comments') == 'on'
     allow_duet = request.POST.get('allow_duet') == 'on'
     allow_stitch = request.POST.get('allow_stitch') == 'on'
-    music_copyright_check = request.POST.get('music_copyright_check') == 'on'
-    content_check_lite = request.POST.get('content_check_lite') == 'on'
     aspect_ratio = request.POST.get('aspect_ratio', 'original')
 
     if not all([media_file, schedule_time_str]):
@@ -335,8 +333,6 @@ def schedule_post(request):
         allow_duet=allow_duet,
         allow_stitch=allow_stitch,
         account_open_id=owner_open_id,
-        music_copyright_check=music_copyright_check,
-        content_check_lite=content_check_lite,
         aspect_ratio=aspect_ratio,
     )
 
