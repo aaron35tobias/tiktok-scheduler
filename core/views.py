@@ -353,9 +353,16 @@ def schedule_post(request):
 
 def delete_post(request, post_id):
     if request.method == 'POST':
+        # Look up the post first so we can also clean up its uploaded file.
+        target = next((p for p in Storage.load_schedule() if p.id == post_id), None)
         deleted = Storage.delete_post(post_id)
         if deleted:
-            Storage.add_activity("🗑️", "Deleted a scheduled post")
+            if target and target.media and os.path.exists(target.media):
+                try:
+                    os.remove(target.media)
+                except OSError:
+                    pass
+            Storage.add_activity("🗑️", "Deleted a post")
     return redirect('dashboard')
 
 
