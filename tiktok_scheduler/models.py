@@ -80,6 +80,9 @@ class Post:
     allow_duet: bool = True
     allow_stitch: bool = True
     account_open_id: str = ""           # which connected account this post belongs to
+    music_copyright_check: bool = False
+    content_check_lite: bool = False
+    royalty_free_sound: str = ""
 
     @property
     def media_filename(self) -> str:
@@ -122,6 +125,9 @@ class Post:
             "allow_duet": self.allow_duet,
             "allow_stitch": self.allow_stitch,
             "account_open_id": self.account_open_id,
+            "music_copyright_check": self.music_copyright_check,
+            "content_check_lite": self.content_check_lite,
+            "royalty_free_sound": self.royalty_free_sound,
         }
 
     @classmethod
@@ -140,4 +146,7 @@ class Post:
             allow_duet=data.get("allow_duet", True),
             allow_stitch=data.get("allow_stitch", True),
             account_open_id=data.get("account_open_id", ""),
+            music_copyright_check=data.get("music_copyright_check", False),
+            content_check_lite=data.get("content_check_lite", False),
+            royalty_free_sound=data.get("royalty_free_sound", ""),
         )

@@ -117,6 +117,17 @@
     .toggles { display: flex; gap: 18px; flex-wrap: wrap; padding-top: 8px; }
     .toggle { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 0.88rem; cursor: pointer; }
     .toggle input { width: 15px; height: 15px; accent-color: var(--tk-cyan); }
+    .hint { font-size: 0.78rem; color: var(--muted); margin-top: 7px; line-height: 1.5; }
+
+    /* Checks block + toggle switches */
+    .checks-box { display: flex; flex-direction: column; gap: 14px; border: 1px solid var(--card-border); border-radius: 10px; padding: 14px 16px; background: rgba(0,0,0,0.15); }
+    .check-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; }
+    .check-text b { font-size: 0.9rem; font-weight: 600; display: block; color: var(--text-primary); }
+    .check-text small { color: var(--muted); font-size: 0.77rem; }
+    .switch { appearance: none; -webkit-appearance: none; width: 40px; height: 22px; border-radius: 999px; background: #3a3f4b; position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0; margin: 0; }
+    .switch::before { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform 0.2s; }
+    .switch:checked { background: var(--tk-cyan); }
+    .switch:checked::before { transform: translateX(18px); }
 
     .file-drop-area {
         position: relative; display: flex; align-items: center; justify-content: center; flex-direction: column;
@@ -378,6 +389,38 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="form-group">
+                        <label>Royalty-Free Sound</label>
+                        <select name="royalty_free_sound">
+                            <option value="">None — use the video's own audio</option>
+                            <option value="Lofi Chill">Lofi Chill</option>
+                            <option value="Upbeat Corporate">Upbeat Corporate</option>
+                            <option value="Cinematic Ambient">Cinematic Ambient</option>
+                            <option value="Energetic Pop">Energetic Pop</option>
+                            <option value="Acoustic Folk">Acoustic Folk</option>
+                            <option value="Electronic Dance">Electronic Dance</option>
+                            <option value="Jazz Cafe">Jazz Cafe</option>
+                            <option value="Inspiring Piano">Inspiring Piano</option>
+                        </select>
+                        <div class="hint">Royalty-free / no-copyright tracks. Add the chosen track in your video editor before uploading.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Checks</label>
+                        <div class="checks-box">
+                            <label class="check-row">
+                                <span class="check-text"><b>Music copyright check</b><small>Flags copyrighted music so it isn't muted or blocked.</small></span>
+                                <input type="checkbox" name="music_copyright_check" class="switch">
+                            </label>
+                            <label class="check-row">
+                                <span class="check-text"><b>Content check lite</b><small>A lighter pre-check of your content before publishing.</small></span>
+                                <input type="checkbox" name="content_check_lite" class="switch">
+                            </label>
+                        </div>
+                        <div class="hint">TikTok also runs its own copyright &amp; content checks automatically when the post publishes.</div>
+                    </div>
+
                     <div class="form-group">
                         <label>Schedule Date &amp; Time ({{ settings.timezone }})</label>
                         <input type="datetime-local" name="schedule" required>
