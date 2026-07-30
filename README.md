@@ -1,4 +1,4 @@
-# TikTok Scheduler (Django + Celery)
+# TikTok Scheduler (Django + Celery) (3rd)
 
 A complete full-stack web application for securely authenticating users and scheduling video content to be published automatically using the official TikTok Direct Post API.
 
